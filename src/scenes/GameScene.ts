@@ -15,7 +15,7 @@ export class GameScene extends Phaser.Scene {
     P: 1.9, B: 1.5, V: 1.0, K: 0.8, J: 0.2, X: 0.2, Q: 0.1, Z: 0.1,
   };
   private readonly TILE_SIZE = 62;
-  private readonly CELL_SPACING = 66;
+  private readonly CELL_SPACING = 132;
   private weightedLetters: string[] = [];
   private currentWord: string = '';
   private currentPath: { x: number; y: number }[] = [];
