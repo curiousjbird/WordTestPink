@@ -511,7 +511,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateCurrentWordText() {
-    this.currentWordText.setText(`Word: ${this.currentWord}`);
+    this.currentWordText.setText(this.currentWord);
   }
 
   private clearSelection(keepColor = false) {
@@ -588,7 +588,8 @@ export class GameScene extends Phaser.Scene {
 
   private updateFoundWordsDisplay() {
       this.foundWordsTextGroup.clear(true, true);
-      let yPos = this.cameras.main.height - 150;
+      const gridBounds = this.gridContainer.getBounds();
+      let yPos = gridBounds.bottom + 40;
       const columns = 5;
       const columnWidth = 80;
 
