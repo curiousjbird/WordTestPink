@@ -57,6 +57,7 @@ export class GameScene extends Phaser.Scene {
     this.setupUI();
     this.setupTimer();
     
+    this.input.on('pointerdown', this.startSwipe, this);
     this.input.on('pointermove', this.handleSwipeMove, this);
     this.input.on('pointerup', this.endSwipe, this);
   }
@@ -310,8 +311,6 @@ export class GameScene extends Phaser.Scene {
 
         const letterTile: LetterTile = { container, text, background, letter };
         
-        container.on('pointerdown', () => this.startSwipe(letterTile));
-        
         this.grid[y][x] = letterTile;
         this.gridContainer.add(container);
       }
@@ -385,12 +384,15 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private startSwipe(letterTile: LetterTile) {
+  private startSwipe(pointer: Phaser.Input.Pointer) {
     if (this.isRotating) return;
 
-    this.clearSelection();
-    this.isSwiping = true;
-    this.addLetterToSelection(letterTile);
+    const letterTile = this.getTileAt(pointer.worldX, pointer.worldY);
+    if (letterTile) {
+      this.clearSelection();
+      this.isSwiping = true;
+      this.addLetterToSelection(letterTile);
+    }
   }
 
   private handleSwipeMove(pointer: Phaser.Input.Pointer) {
