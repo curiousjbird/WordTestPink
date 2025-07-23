@@ -181,7 +181,7 @@ export class GameScene extends Phaser.Scene {
 
         const letterTile: LetterTile = { container, text, background, letter };
         
-        container.on('pointerdown', () => this.onLetterClicked(letterTile, x, y));
+        container.on('pointerdown', () => this.onLetterClicked(letterTile));
         
         this.grid[y][x] = letterTile;
         this.gridContainer.add(container);
@@ -190,58 +190,80 @@ export class GameScene extends Phaser.Scene {
   }
 
   private rotateBoard() {
-    if (this.isRotating) {
-      return;
-    }
+    if (this.isRotating) return;
     this.isRotating = true;
     this.clearSelection();
 
     const newGrid: LetterTile[][] = Array.from({ length: 5 }, () => []);
 
-    // Animate each tile to its new position and update the logical grid
+    // Animate each tile to its new position.
     this.grid.flat().forEach((tile, index) => {
-      const oldRow = Math.floor(index / 5);
-      const oldCol = index % 5;
-      
-      const newRow = oldCol;
-      const newCol = 4 - oldRow;
-
-      const newX = (newCol - 2) * 60;
-      const newY = (newRow - 2) * 60;
-      
-      newGrid[newRow][newCol] = tile;
-      
-      this.tweens.add({
-        targets: tile.container,
-        x: newX,
-        y: newY,
-        duration: 500,
-        ease: 'Power2'
-      });
+        const oldRow = Math.floor(index / 5);
+        const oldCol = index % 5;
+        const newRow = oldCol;
+        const newCol = 4 - oldRow;
+        
+        newGrid[newRow][newCol] = tile;
+        
+        const newX = (newCol - 2) * 60;
+        const newY = (newRow - 2) * 60;
+        
+        this.tweens.add({
+            targets: tile.container,
+            x: newX,
+            y: newY,
+            duration: 500,
+            ease: 'Power2'
+        });
     });
 
-    // Animate the main container and letters
+    // Animate the main container and counter-rotate the children on each frame.
     this.tweens.add({
-      targets: this.gridContainer,
-      angle: '+=90',
-      duration: 500,
-      ease: 'Power2',
-      onComplete: () => {
-        this.gridContainer.each((child: Phaser.GameObjects.Container) => {
-          child.angle -= 90;
-        });
-        this.gridContainer.angle = 0;
-        this.grid = newGrid;
-        this.isRotating = false;
-      }
+        targets: this.gridContainer,
+        angle: '+=90',
+        duration: 500,
+        ease: 'Power2',
+        onUpdate: () => {
+            // Counter-rotate each tile so it appears upright
+            this.gridContainer.each((child: Phaser.GameObjects.GameObject) => {
+                if (child instanceof Phaser.GameObjects.Container) {
+                    child.angle = -this.gridContainer.angle;
+                }
+            });
+        },
+        onComplete: () => {
+            // Animation is done, "bake" the final state.
+            this.gridContainer.each((child: Phaser.GameObjects.GameObject) => {
+                if (child instanceof Phaser.GameObjects.Container) {
+                    child.angle = 0;
+                }
+            });
+            // Reset the main container's angle as well.
+            this.gridContainer.angle = 0;
+            
+            // Update the logical grid.
+            this.grid = newGrid;
+            this.isRotating = false;
+        }
     });
   }
 
-  private onLetterClicked(letterTile: LetterTile, x: number, y: number) {
+  private onLetterClicked(letterTile: LetterTile) {
     if (this.isRotating) return;
-    if (this.isValidSelection(x, y)) {
+    
+    let pos = { x: -1, y: -1 };
+    for (let y = 0; y < 5; y++) {
+        const x = this.grid[y].indexOf(letterTile);
+        if (x !== -1) {
+            pos = { x, y };
+            break;
+        }
+    }
+    if (pos.x === -1) return;
+
+    if (this.isValidSelection(pos.x, pos.y)) {
       this.currentWord += letterTile.letter;
-      this.currentPath.push({ x, y });
+      this.currentPath.push({ x: pos.x, y: pos.y });
       this.selectedLetters.push(letterTile);
       letterTile.background.setFillStyle(0x0000ff); // Blue
       this.updateCurrentWordText();
