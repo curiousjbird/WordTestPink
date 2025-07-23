@@ -514,10 +514,6 @@ export class GameScene extends Phaser.Scene {
     this.currentWordText.setText(`Word: ${this.currentWord}`);
   }
 
-  private submitWord() {
-    this.checkWord();
-  }
-
   private clearSelection(keepColor = false) {
     this.currentWord = '';
     this.currentPath = [];
