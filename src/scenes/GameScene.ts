@@ -30,6 +30,8 @@ export class GameScene extends Phaser.Scene {
   private remainingTime: number = 180; // 3 minutes in seconds
   private gridContainer!: Phaser.GameObjects.Container;
   private isRotating: boolean = false;
+  private hiddenWordsList: string[] = [];
+  private placedWords: { word: string, path: {x: number, y: number}[] }[] = [];
 
   constructor() {
     super('GameScene');
@@ -37,13 +39,16 @@ export class GameScene extends Phaser.Scene {
 
   preload() {
     this.load.text('wordList', 'assets/words_english.txt');
+    this.load.text('hiddenWords', 'src/assets/wordlists/hiddenwords.txt');
   }
 
   create() {
     this.wordList = this.cache.text.get('wordList').split('\n').map((s: string) => s.trim().toUpperCase());
+    this.hiddenWordsList = this.cache.text.get('hiddenWords').split('\n').map((s: string) => s.trim().toUpperCase()).filter((w: string) => w.length > 0);
 
     this.createWeightedLetters();
-    this.createGrid();
+    const letterLayout = this.generatePuzzleGrid();
+    this.createGrid(letterLayout);
     this.displayGrid();
     this.setupUI();
     this.setupTimer();
@@ -147,9 +152,126 @@ export class GameScene extends Phaser.Scene {
     return this.weightedLetters[randomIndex];
   }
 
-  private createGrid() {
-    const columns = 5;
-    const rows = 5;
+  private generatePuzzleGrid(): string[][] {
+    const gridSize = 5;
+    const grid: (string | null)[][] = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+
+    const numWordsToPlace = Phaser.Math.Between(2, 5);
+    const wordsToPlace = Phaser.Utils.Array.Shuffle([...this.hiddenWordsList]).slice(0, numWordsToPlace);
+
+    this.placedWords = [];
+
+    for (const word of wordsToPlace) {
+        const placed = this.tryPlaceWord(word.toUpperCase(), grid);
+        if (!placed) {
+            console.warn(`Failed to place word: ${word}`);
+        }
+    }
+
+    const finalGrid: string[][] = [];
+    for (let y = 0; y < gridSize; y++) {
+        finalGrid[y] = [];
+        for (let x = 0; x < gridSize; x++) {
+            if (grid[y][x] === null) {
+                finalGrid[y][x] = this.getRandomLetter();
+            } else {
+                finalGrid[y][x] = grid[y][x]!;
+            }
+        }
+    }
+    return finalGrid;
+  }
+
+  private tryPlaceWord(word: string, grid: (string | null)[][]): boolean {
+    const gridSize = 5;
+    const startPositions = [];
+    for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+            startPositions.push({ x, y });
+        }
+    }
+    Phaser.Utils.Array.Shuffle(startPositions);
+
+    for (const pos of startPositions) {
+        const path = this.findPathForWord(word, grid, pos.x, pos.y);
+        if (path) {
+            for (let i = 0; i < word.length; i++) {
+                const { x, y } = path[i];
+                grid[y][x] = word[i];
+            }
+            this.placedWords.push({ word, path });
+            return true;
+        }
+    }
+
+    return false;
+  }
+
+    private findPathForWord(word: string, grid: (string | null)[][], startX: number, startY: number): {x: number, y: number}[] | null {
+      const path: {x: number, y: number}[] = [];
+      const visited: boolean[][] = Array.from({ length: 5 }, () => Array(5).fill(false));
+
+      const search = (x: number, y: number, index: number): boolean => {
+          // Check boundaries
+          if (x < 0 || x >= 5 || y < 0 || y >= 5) return false;
+
+          // Check if already visited in current path
+          if (visited[y][x]) return false;
+
+          // Check if cell is available or matches the required letter
+          const cellLetter = grid[y][x];
+          const wordLetter = word[index];
+          if (cellLetter !== null && cellLetter !== wordLetter) {
+              return false;
+          }
+
+          // Mark as visited and add to path
+          visited[y][x] = true;
+          path.push({ x, y });
+
+          // Base case: word is fully placed
+          if (index === word.length - 1) {
+              return true;
+          }
+
+          // Get neighbors and shuffle them
+          const neighbors = this.getNeighbors(x, y);
+          Phaser.Utils.Array.Shuffle(neighbors);
+
+          // Recursive search
+          for (const neighbor of neighbors) {
+              if (search(neighbor.x, neighbor.y, index + 1)) {
+                  return true;
+              }
+          }
+
+          // Backtrack
+          visited[y][x] = false;
+          path.pop();
+          return false;
+      };
+
+      if (search(startX, startY, 0)) {
+          return path;
+      }
+
+      return null;
+  }
+
+  private getNeighbors(x: number, y: number): {x: number, y: number}[] {
+      const neighbors = [];
+      for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+              if (dx === 0 && dy === 0) continue;
+              neighbors.push({ x: x + dx, y: y + dy });
+          }
+      }
+      return neighbors;
+  }
+
+  private createGrid(letterLayout: string[][]) {
+    const rows = letterLayout.length;
+    const columns = letterLayout[0].length;
     const cellWidth = 60;
     const cellHeight = 60;
     const gridWidth = (columns - 1) * cellWidth;
@@ -164,7 +286,7 @@ export class GameScene extends Phaser.Scene {
     for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
       for (let x = 0; x < columns; x++) {
-        const letter = this.getRandomLetter();
+        const letter = letterLayout[y][x];
         const xPos = startX + x * cellWidth;
         const yPos = startY + y * cellHeight;
 
@@ -282,6 +404,17 @@ export class GameScene extends Phaser.Scene {
     return isAdjacent && isNotSelected;
   }
 
+  private getTilePosition(letterTile: LetterTile): { x: number; y: number } | null {
+    for (let y = 0; y < this.grid.length; y++) {
+        for (let x = 0; x < this.grid[y].length; x++) {
+            if (this.grid[y][x] === letterTile) {
+                return { x, y };
+            }
+        }
+    }
+    return null;
+  }
+
   private updateCurrentWordText() {
     this.currentWordText.setText(`Word: ${this.currentWord}`);
   }
@@ -304,10 +437,28 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.wordList.includes(word)) {
-      this.feedbackText.setText('Valid Word!').setColor('#00ff00');
-      this.foundWords.push(word);
-      this.updateScore();
-      this.updateFoundWordsDisplay();
+        this.foundWords.push(word);
+        this.updateScore(word);
+        this.updateFoundWordsDisplay();
+
+        const hiddenWord = this.placedWords.find(p => p.word === word);
+        if (hiddenWord) {
+            this.feedbackText.setText('Hidden Word Found!').setColor('#00ffff');
+            hiddenWord.path.forEach(pos => {
+                const tile = this.grid[pos.y][pos.x];
+                this.tweens.add({
+                    targets: tile.background,
+                    scaleX: 1.2,
+                    scaleY: 1.2,
+                    yoyo: true,
+                    duration: 200,
+                    ease: 'Power2'
+                });
+                tile.background.setFillStyle(0xffff00); // Yellow
+            });
+        } else {
+            this.feedbackText.setText('Valid Word!').setColor('#00ff00');
+        }
     } else {
       this.feedbackText.setText('Invalid Word').setColor('#ff0000');
     }
@@ -319,19 +470,38 @@ export class GameScene extends Phaser.Scene {
   private clearSelection() {
     this.currentWord = '';
     this.currentPath = [];
-    this.selectedLetters.forEach(tile => tile.background.setFillStyle(0xffffff)); // White
+    this.selectedLetters.forEach(tile => {
+        const tilePos = this.getTilePosition(tile);
+        if (tilePos) {
+            const isPartOfFoundHiddenWord = this.placedWords.some(pWord => 
+                this.foundWords.includes(pWord.word) && pWord.path.some(pathPos => 
+                    pathPos.x === tilePos.x && pathPos.y === tilePos.y
+                )
+            );
+
+            if (!isPartOfFoundHiddenWord) {
+                tile.background.setFillStyle(0xffffff); // White
+            }
+        } else {
+            tile.background.setFillStyle(0xffffff); // Fallback for safety
+        }
+    });
     this.selectedLetters = [];
     this.updateCurrentWordText();
   }
 
-  private updateScore() {
-    const len = this.currentWord.length;
+  private updateScore(word: string) {
+    const len = word.length;
     let points = 0;
     if (len === 3) points = 1;
     else if (len === 4) points = 3;
     else if (len === 5) points = 5;
     else if (len === 6) points = 9;
     else if (len > 6) points = 9 + (len - 6);
+
+    if (this.placedWords.some(p => p.word === word)) {
+        points *= 2; // Double points for hidden words
+    }
 
     this.score += points;
     this.scoreText.setText(`Score: ${this.score}`);
@@ -354,8 +524,10 @@ export class GameScene extends Phaser.Scene {
 
     this.gridContainer.destroy();
     this.grid = [];
+    this.placedWords = [];
 
-    this.createGrid();
+    const letterLayout = this.generatePuzzleGrid();
+    this.createGrid(letterLayout);
   }
 
   private endGame() {

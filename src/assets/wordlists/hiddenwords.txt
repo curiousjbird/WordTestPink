@@ -1,0 +1,10 @@
+help
+crime
+solve
+gun
+weapon
+flip
+shield
+save
+trouble
+need
