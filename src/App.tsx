@@ -14,6 +14,7 @@ function App() {
         height: 800,
         parent: phaserRef.current,
         scene: [GameScene],
+        backgroundColor: '#333333',
         scale: {
           mode: Phaser.Scale.FIT,
           autoCenter: Phaser.Scale.CENTER_BOTH

@@ -39,21 +39,25 @@ export class GameScene extends Phaser.Scene {
     this.currentWordText = this.add.text(10, 10, 'Word: ', {
       fontSize: '32px',
       color: '#ffffff',
+      fontFamily: 'Outfit'
     });
 
     this.scoreText = this.add.text(10, 50, 'Score: 0', {
       fontSize: '32px',
       color: '#ffffff',
+      fontFamily: 'Outfit'
     });
 
     this.feedbackText = this.add.text(this.cameras.main.width / 2, 120, '', {
       fontSize: '24px',
       color: '#ff0000',
+      fontFamily: 'Outfit'
     }).setOrigin(0.5);
 
     const submitButton = this.add.text(this.cameras.main.width / 2 + 80, this.cameras.main.height - 50, 'Submit', {
       fontSize: '32px',
       color: '#00ff00',
+      fontFamily: 'Outfit'
     }).setOrigin(0.5);
 
     const submitHitArea = new Phaser.Geom.Rectangle(0, 0, 120, 50);
@@ -63,6 +67,7 @@ export class GameScene extends Phaser.Scene {
     const clearButton = this.add.text(this.cameras.main.width / 2 - 80, this.cameras.main.height - 50, 'Clear', {
         fontSize: '32px',
         color: '#ffff00',
+        fontFamily: 'Outfit'
     }).setOrigin(0.5);
     
     const clearHitArea = new Phaser.Geom.Rectangle(0, 0, 100, 50);
@@ -86,15 +91,25 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createGrid() {
-    for (let y = 0; y < 5; y++) {
+    const columns = 5;
+    const rows = 5;
+    const cellWidth = 60; // Increased spacing for a better look
+    const cellHeight = 60;
+    const gridWidth = (columns - 1) * cellWidth;
+    
+    const startX = (this.cameras.main.width - gridWidth) / 2;
+    const startY = 250; // Adjusted vertical position
+
+    for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
-      for (let x = 0; x < 5; x++) {
+      for (let x = 0; x < columns; x++) {
         const letter = this.getRandomLetter();
-        const xPos = 100 + x * 50;
-        const yPos = 200 + y * 50;
+        const xPos = startX + x * cellWidth;
+        const yPos = startY + y * cellHeight;
         const text = this.add.text(xPos, yPos, letter, {
-          fontSize: '32px',
+          fontSize: '40px',
           color: '#ffffff',
+          fontFamily: 'Monofett'
         }).setOrigin(0.5);
 
         // Increase hit area for better touch sensitivity
@@ -212,7 +227,8 @@ export class GameScene extends Phaser.Scene {
           }
           const text = this.add.text(xPos, yPos, word, {
               fontSize: '24px',
-              color: '#00ffff' // Blue color
+              color: '#00ffff', // Blue color
+              fontFamily: 'Outfit'
           }).setOrigin(0.5);
           this.foundWordsTextGroup.add(text);
       });
