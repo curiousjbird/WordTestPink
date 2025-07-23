@@ -1,7 +1,14 @@
 import Phaser from 'phaser';
 
+type LetterTile = {
+    container: Phaser.GameObjects.Container;
+    text: Phaser.GameObjects.Text;
+    background: Phaser.GameObjects.Rectangle;
+    letter: string;
+};
+
 export class GameScene extends Phaser.Scene {
-  private grid: Phaser.GameObjects.Text[][] = [];
+  private grid: LetterTile[][] = [];
   private letterFrequencies = {
     E: 12.7, T: 9.1, A: 8.2, O: 7.5, I: 7.0, N: 6.7, S: 6.3, H: 6.1, R: 6.0,
     D: 4.3, L: 4.0, C: 2.8, U: 2.8, M: 2.4, W: 2.4, F: 2.2, G: 2.0, Y: 2.0,
@@ -10,7 +17,7 @@ export class GameScene extends Phaser.Scene {
   private weightedLetters: string[] = [];
   private currentWord: string = '';
   private currentPath: { x: number; y: number }[] = [];
-  private selectedLetters: Phaser.GameObjects.Text[] = [];
+  private selectedLetters: LetterTile[] = [];
   private currentWordText!: Phaser.GameObjects.Text;
   private wordList: string[] = [];
   private score: number = 0;
@@ -93,12 +100,12 @@ export class GameScene extends Phaser.Scene {
   private createGrid() {
     const columns = 5;
     const rows = 5;
-    const cellWidth = 60; // Increased spacing for a better look
+    const cellWidth = 60;
     const cellHeight = 60;
     const gridWidth = (columns - 1) * cellWidth;
     
     const startX = (this.cameras.main.width - gridWidth) / 2;
-    const startY = 250; // Adjusted vertical position
+    const startY = 250;
 
     for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
@@ -106,28 +113,33 @@ export class GameScene extends Phaser.Scene {
         const letter = this.getRandomLetter();
         const xPos = startX + x * cellWidth;
         const yPos = startY + y * cellHeight;
-        const text = this.add.text(xPos, yPos, letter, {
-          fontSize: '40px',
-          color: '#ffffff',
-          fontFamily: 'Monofett'
-        }).setOrigin(0.5);
 
-        // Increase hit area for better touch sensitivity
-        const hitArea = new Phaser.Geom.Rectangle(0, 0, 50, 50);
-        text.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
-        text.on('pointerdown', () => this.onLetterClicked(text, x, y));
+        const background = this.add.rectangle(0, 0, 50, 50, 0xffffff);
+        const text = this.add.text(0, 0, letter, {
+          fontSize: '40px',
+          color: '#000000',
+          fontFamily: 'VT323'
+        }).setOrigin(0.5);
         
-        this.grid[y][x] = text;
+        const container = this.add.container(xPos, yPos, [ background, text ]);
+        const hitArea = new Phaser.Geom.Rectangle(-25, -25, 50, 50);
+        container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+
+        const letterTile: LetterTile = { container, text, background, letter };
+        
+        container.on('pointerdown', () => this.onLetterClicked(letterTile, x, y));
+        
+        this.grid[y][x] = letterTile;
       }
     }
   }
 
-  private onLetterClicked(letter: Phaser.GameObjects.Text, x: number, y: number) {
+  private onLetterClicked(letterTile: LetterTile, x: number, y: number) {
     if (this.isValidSelection(x, y)) {
-      this.currentWord += letter.text;
+      this.currentWord += letterTile.letter;
       this.currentPath.push({ x, y });
-      this.selectedLetters.push(letter);
-      letter.setColor('#ff0000');
+      this.selectedLetters.push(letterTile);
+      letterTile.background.setFillStyle(0x0000ff); // Blue
       this.updateCurrentWordText();
     }
   }
@@ -181,7 +193,7 @@ export class GameScene extends Phaser.Scene {
   private clearSelection() {
     this.currentWord = '';
     this.currentPath = [];
-    this.selectedLetters.forEach(letter => letter.setColor('#ffffff'));
+    this.selectedLetters.forEach(tile => tile.background.setFillStyle(0xffffff)); // White
     this.selectedLetters = [];
     this.updateCurrentWordText();
   }
@@ -211,7 +223,7 @@ export class GameScene extends Phaser.Scene {
     this.foundWordsTextGroup.clear(true, true);
     this.feedbackText.setText('');
 
-    this.grid.flat().forEach(letter => letter.destroy());
+    this.grid.flat().forEach(tile => tile.container.destroy());
     this.grid = [];
 
     this.createGrid();
