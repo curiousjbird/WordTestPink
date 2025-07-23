@@ -30,6 +30,7 @@ export class GameScene extends Phaser.Scene {
   private remainingTime: number = 180; // 3 minutes in seconds
   private gridContainer!: Phaser.GameObjects.Container;
   private isRotating: boolean = false;
+  private isSwiping: boolean = false;
   private hiddenWordsList: string[] = [];
   private placedWords: { word: string, path: {x: number, y: number}[] }[] = [];
   private debugSettings: any;
@@ -55,6 +56,9 @@ export class GameScene extends Phaser.Scene {
     this.displayGrid();
     this.setupUI();
     this.setupTimer();
+    
+    this.input.on('pointermove', this.handleSwipeMove, this);
+    this.input.on('pointerup', this.endSwipe, this);
   }
 
   private setupUI() {
@@ -306,7 +310,7 @@ export class GameScene extends Phaser.Scene {
 
         const letterTile: LetterTile = { container, text, background, letter };
         
-        container.on('pointerdown', () => this.onLetterClicked(letterTile));
+        container.on('pointerdown', () => this.startSwipe(letterTile));
         
         this.grid[y][x] = letterTile;
         this.gridContainer.add(container);
@@ -381,18 +385,46 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private onLetterClicked(letterTile: LetterTile) {
+  private startSwipe(letterTile: LetterTile) {
     if (this.isRotating) return;
-    
-    let pos = { x: -1, y: -1 };
-    for (let y = 0; y < 5; y++) {
-        const x = this.grid[y].indexOf(letterTile);
-        if (x !== -1) {
-            pos = { x, y };
-            break;
+
+    this.clearSelection();
+    this.isSwiping = true;
+    this.addLetterToSelection(letterTile);
+  }
+
+  private handleSwipeMove(pointer: Phaser.Input.Pointer) {
+    if (!this.isSwiping) return;
+
+    const letterTile = this.getTileAt(pointer.worldX, pointer.worldY);
+    if (letterTile) {
+        this.addLetterToSelection(letterTile);
+    }
+  }
+
+  private endSwipe() {
+    this.isSwiping = false;
+  }
+
+  private getTileAt(worldX: number, worldY: number): LetterTile | null {
+    for (let y = 0; y < this.grid.length; y++) {
+        for (let x = 0; x < this.grid[y].length; x++) {
+            const tile = this.grid[y][x];
+            const bounds = tile.container.getBounds();
+            if (bounds.contains(worldX, worldY)) {
+                return tile;
+            }
         }
     }
-    if (pos.x === -1) return;
+    return null;
+  }
+
+  private addLetterToSelection(letterTile: LetterTile) {
+    const pos = this.getTilePosition(letterTile);
+    if (!pos) return;
+    
+    const isAlreadySelected = this.selectedLetters.includes(letterTile);
+    if (isAlreadySelected) return;
 
     if (this.isValidSelection(pos.x, pos.y)) {
       this.currentWord += letterTile.letter;
@@ -401,6 +433,12 @@ export class GameScene extends Phaser.Scene {
       letterTile.background.setFillStyle(0x0000ff); // Blue
       this.updateCurrentWordText();
     }
+  }
+
+  private onLetterClicked(letterTile: LetterTile) {
+    if (this.isRotating) return;
+    
+    this.addLetterToSelection(letterTile);
   }
 
   private isValidSelection(x: number, y: number): boolean {
@@ -517,7 +555,7 @@ export class GameScene extends Phaser.Scene {
     this.score += points;
     this.scoreText.setText(`Score: ${this.score}`);
 
-    if (this.score >= 20) {
+    if (this.score >= 200000) {
         this.feedbackText.setText('Game Over!').setColor('#00ff00');
         this.time.delayedCall(3000, () => this.resetGame());
     }
