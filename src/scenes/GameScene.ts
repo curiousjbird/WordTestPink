@@ -36,6 +36,11 @@ export class GameScene extends Phaser.Scene {
   private hiddenWordsList: string[] = [];
   private placedWords: { word: string, path: {x: number, y: number}[] }[] = [];
   private debugSettings: any;
+  private levelData: { level: number, goal: number, time_limit_sec: number }[] = [];
+  private currentLevel: number = 1;
+  private currentGoal: number = 0;
+  private levelText!: Phaser.GameObjects.Text;
+  private goalText!: Phaser.GameObjects.Text;
 
   constructor() {
     super('GameScene');
@@ -45,6 +50,7 @@ export class GameScene extends Phaser.Scene {
     this.load.text('wordList', 'assets/words_english.txt');
     this.load.text('hiddenWords', 'assets/wordlists/hiddenwords.txt');
     this.load.json('debugSettings', 'assets/debug.json');
+    this.load.text('levelData', 'assets/data_files/level_detail.csv');
   }
 
   create() {
@@ -57,20 +63,67 @@ export class GameScene extends Phaser.Scene {
     this.cellSpacing = gridContainerWidth / 5;
     this.tileSize = this.cellSpacing * 0.9;
 
-    this.createWeightedLetters();
-    const letterLayout = this.generatePuzzleGrid();
-    this.createGrid(letterLayout);
-    this.displayGrid();
+    this.parseLevelData();
     this.setupUI();
-    this.setupTimer();
+    this.setupLevel(this.currentLevel);
     
     this.input.on('pointerdown', this.startSwipe, this);
     this.input.on('pointermove', this.handleSwipeMove, this);
     this.input.on('pointerup', this.endSwipe, this);
   }
 
+  private parseLevelData() {
+    const data = this.cache.text.get('levelData').split('\n');
+    data.shift(); 
+    this.levelData = data.map((row: string) => {
+        const [level, goal, time_limit_sec] = row.trim().split(',');
+        return {
+            level: parseInt(level, 10),
+            goal: parseInt(goal, 10),
+            time_limit_sec: parseInt(time_limit_sec, 10)
+        };
+    }).filter((row: { level: number; goal: number; time_limit_sec: number; }) => !isNaN(row.level));
+  }
+
+  private setupLevel(levelNumber: number) {
+    this.currentLevel = levelNumber;
+    const levelInfo = this.levelData.find(l => l.level === this.currentLevel);
+
+    if (!levelInfo) {
+        this.feedbackText.setText('You Win!').setColor('#00ff00').setDepth(1);
+        this.gridContainer.destroy();
+        return;
+    }
+
+    this.currentGoal = levelInfo.goal;
+    this.remainingTime = levelInfo.time_limit_sec;
+    this.score = 0;
+    
+    this.foundWords = [];
+    if (this.foundWordsTextGroup) this.foundWordsTextGroup.clear(true, true);
+    if(this.feedbackText) this.feedbackText.setText('');
+    
+    this.levelText.setText(`Level: ${this.currentLevel}`);
+    this.goalText.setText(`Goal: ${this.currentGoal}`);
+    this.scoreText.setText(`Score: ${this.score}`);
+
+    if (this.gridContainer) this.gridContainer.destroy();
+    this.createWeightedLetters();
+    const letterLayout = this.generatePuzzleGrid();
+    this.createGrid(letterLayout);
+    this.displayGrid();
+
+    if (this.gameTimer) this.gameTimer.destroy();
+    if(this.timerText) this.timerText.destroy();
+    this.setupTimer();
+  }
+
   private setupUI() {
     this.foundWordsTextGroup = this.add.group();
+
+    this.levelText = this.add.text(10, 10, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
+    this.goalText = this.add.text(10, 40, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
+    this.scoreText = this.add.text(10, 70, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
 
     this.currentWordText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 - 200, '', {
       fontSize: '32px',
@@ -112,11 +165,11 @@ export class GameScene extends Phaser.Scene {
   }
   
   private setupTimer() {
-    this.timerText = this.add.text(10, 50, this.formatTime(this.remainingTime), {
+    this.timerText = this.add.text(this.cameras.main.width - 10, 10, this.formatTime(this.remainingTime), {
         fontSize: '32px',
         color: '#ffffff',
         fontFamily: 'Outfit'
-    });
+    }).setOrigin(1, 0);
 
     this.gameTimer = this.time.addEvent({
         delay: 1000,
@@ -610,37 +663,22 @@ export class GameScene extends Phaser.Scene {
 
     this.score += points;
     this.scoreText.setText(`Score: ${this.score}`);
-
-    if (this.score >= 200000) {
-        this.feedbackText.setText('Game Over!').setColor('#00ff00');
-        this.time.delayedCall(3000, () => this.resetGame());
-    }
   }
 
   private resetGame() {
-    this.score = 0;
-    this.scoreText.setText('Score: 0');
-    this.foundWords = [];
-    this.foundWordsTextGroup.clear(true, true);
-    this.feedbackText.setText('');
-    this.remainingTime = 180;
-    this.timerText.destroy();
-    this.gameTimer.destroy();
-    this.setupTimer();
-
-    this.gridContainer.destroy();
-    this.grid = [];
-    this.placedWords = [];
-
-    const letterLayout = this.generatePuzzleGrid();
-    this.createGrid(letterLayout);
+    this.setupLevel(1);
   }
 
   private endGame() {
-    this.feedbackText.setText('Time\'s Up!').setColor('#ff0000');
-    // Disable interaction with letters
     this.grid.flat().forEach(tile => tile.container.disableInteractive());
-    this.time.delayedCall(3000, () => this.resetGame());
+    
+    if (this.score >= this.currentGoal) {
+        this.feedbackText.setText('Level Complete!').setColor('#00ff00').setDepth(1);
+        this.time.delayedCall(2000, () => this.setupLevel(this.currentLevel + 1));
+    } else {
+        this.feedbackText.setText('Game Over!').setColor('#ff0000').setDepth(1);
+        this.time.delayedCall(3000, () => this.resetGame());
+    }
   }
 
   private updateFoundWordsDisplay() {
