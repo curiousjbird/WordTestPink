@@ -53,7 +53,7 @@ export class GameScene extends Phaser.Scene {
     this.debugSettings = this.cache.json.get('debugSettings');
 
     const size = Math.min(this.cameras.main.width, this.cameras.main.height);
-    const gridContainerWidth = size * 0.8;
+    const gridContainerWidth = size * 0.96;
     this.cellSpacing = gridContainerWidth / 5;
     this.tileSize = this.cellSpacing * 0.9;
 
