@@ -65,13 +65,13 @@ export class GameScene extends Phaser.Scene {
   private setupUI() {
     this.foundWordsTextGroup = this.add.group();
 
-    this.currentWordText = this.add.text(10, 10, 'Word: ', {
+    this.currentWordText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 - 200, '', {
       fontSize: '32px',
       color: '#ffffff',
       fontFamily: 'Outfit'
-    });
+    }).setOrigin(0.5);
 
-    this.scoreText = this.add.text(10, 50, 'Score: 0', {
+    this.scoreText = this.add.text(10, 10, 'Score: 0', {
       fontSize: '32px',
       color: '#ffffff',
       fontFamily: 'Outfit'
@@ -105,11 +105,11 @@ export class GameScene extends Phaser.Scene {
   }
   
   private setupTimer() {
-    this.timerText = this.add.text(this.cameras.main.width - 10, 10, `Time: ${this.formatTime(this.remainingTime)}`, {
+    this.timerText = this.add.text(10, 50, this.formatTime(this.remainingTime), {
         fontSize: '32px',
         color: '#ffffff',
         fontFamily: 'Outfit'
-    }).setOrigin(1, 0);
+    });
 
     this.gameTimer = this.time.addEvent({
         delay: 1000,
@@ -121,7 +121,7 @@ export class GameScene extends Phaser.Scene {
   
   private updateTimer() {
     this.remainingTime--;
-    this.timerText.setText(`Time: ${this.formatTime(this.remainingTime)}`);
+    this.timerText.setText(this.formatTime(this.remainingTime));
 
     if (this.remainingTime <= 0) {
         this.gameTimer.remove();
@@ -275,7 +275,7 @@ export class GameScene extends Phaser.Scene {
     const gridWidth = (columns - 1) * cellWidth;
     
     const gridX = this.cameras.main.width / 2;
-    const gridY = this.cameras.main.height / 2;
+    const gridY = this.cameras.main.height / 2 - (this.cameras.main.height * 0.1);
     this.gridContainer = this.add.container(gridX, gridY);
 
     const startX = -gridWidth / 2;
@@ -588,14 +588,17 @@ export class GameScene extends Phaser.Scene {
 
   private updateFoundWordsDisplay() {
       this.foundWordsTextGroup.clear(true, true);
-      let yPos = 450;
+      let yPos = this.cameras.main.height - 150;
+      const columns = 5;
+      const columnWidth = 80;
+
       this.foundWords.forEach((word, index) => {
-          const xPos = 100 + (index % 4) * 90;
-          if (index > 0 && index % 4 === 0) {
-              yPos += 30;
+          const xPos = (this.cameras.main.width / 2) - (columnWidth * (columns-1) / 2) + ((index % columns) * columnWidth);
+          if (index > 0 && index % columns === 0) {
+              yPos += 25;
           }
           const text = this.add.text(xPos, yPos, word, {
-              fontSize: '24px',
+              fontSize: '18px',
               color: '#00ffff', // Blue color
               fontFamily: 'Outfit'
           }).setOrigin(0.5);
