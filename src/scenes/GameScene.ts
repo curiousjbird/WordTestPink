@@ -54,22 +54,20 @@ export class GameScene extends Phaser.Scene {
     const submitButton = this.add.text(this.cameras.main.width / 2 + 80, this.cameras.main.height - 50, 'Submit', {
       fontSize: '32px',
       color: '#00ff00',
-    }).setOrigin(0.5).setInteractive();
+    }).setOrigin(0.5);
 
+    const submitHitArea = new Phaser.Geom.Rectangle(0, 0, 120, 50);
+    submitButton.setInteractive(submitHitArea, Phaser.Geom.Rectangle.Contains);
     submitButton.on('pointerdown', () => this.submitWord());
-    if (submitButton.input) {
-      submitButton.input.hitArea.setTo(-50, -20, 100, 40);
-    }
 
     const clearButton = this.add.text(this.cameras.main.width / 2 - 80, this.cameras.main.height - 50, 'Clear', {
         fontSize: '32px',
         color: '#ffff00',
-    }).setOrigin(0.5).setInteractive();
-
+    }).setOrigin(0.5);
+    
+    const clearHitArea = new Phaser.Geom.Rectangle(0, 0, 100, 50);
+    clearButton.setInteractive(clearHitArea, Phaser.Geom.Rectangle.Contains);
     clearButton.on('pointerdown', () => this.clearSelection());
-    if (clearButton.input) {
-      clearButton.input.hitArea.setTo(-50, -20, 100, 40);
-    }
   }
 
   private createWeightedLetters() {
@@ -97,15 +95,13 @@ export class GameScene extends Phaser.Scene {
         const text = this.add.text(xPos, yPos, letter, {
           fontSize: '32px',
           color: '#ffffff',
-        }).setOrigin(0.5).setInteractive();
+        }).setOrigin(0.5);
 
+        // Increase hit area for better touch sensitivity
+        const hitArea = new Phaser.Geom.Rectangle(0, 0, 50, 50);
+        text.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
         text.on('pointerdown', () => this.onLetterClicked(text, x, y));
         
-        // Increase hit area for better touch sensitivity
-        if (text.input) {
-          text.input.hitArea.setTo(-25, -25, 50, 50);
-        }
-
         this.grid[y][x] = text;
       }
     }
