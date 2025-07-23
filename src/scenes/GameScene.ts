@@ -396,7 +396,18 @@ export class GameScene extends Phaser.Scene {
     if (!this.isSwiping) return;
 
     const letterTile = this.getTileAt(pointer.worldX, pointer.worldY);
-    if (letterTile) {
+    if (!letterTile) {
+        return;
+    }
+
+    const isAlreadySelected = this.selectedLetters.includes(letterTile);
+
+    if (isAlreadySelected && this.selectedLetters.length > 1) {
+        const secondLastTile = this.selectedLetters[this.selectedLetters.length - 2];
+        if (letterTile === secondLastTile) {
+            this.deselectLastLetter();
+        }
+    } else {
         this.addLetterToSelection(letterTile);
     }
   }
@@ -436,6 +447,16 @@ export class GameScene extends Phaser.Scene {
       this.selectedLetters.push(letterTile);
       letterTile.background.setFillStyle(0x0000ff); // Blue
       this.updateCurrentWordText();
+    }
+  }
+  
+  private deselectLastLetter() {
+    const lastTile = this.selectedLetters.pop();
+    if (lastTile) {
+        this.currentWord = this.currentWord.slice(0, -1);
+        this.currentPath.pop();
+        this.resetTileColor(lastTile);
+        this.updateCurrentWordText();
     }
   }
 
@@ -492,6 +513,34 @@ export class GameScene extends Phaser.Scene {
             }
         });
     });
+  }
+
+  private resetTileColor(tile: LetterTile) {
+    const tilePos = this.getTilePosition(tile);
+
+    if (tilePos) {
+        const isPartOfFoundHiddenWord = this.placedWords.some(pWord => 
+            this.foundWords.includes(pWord.word) && pWord.path.some(pathPos => 
+                pathPos.x === tilePos.x && pathPos.y === tilePos.y
+            )
+        );
+
+        if (isPartOfFoundHiddenWord) {
+            return; 
+        }
+
+        if (this.debugSettings.show_hidden_words) {
+            const isHiddenForDebug = this.placedWords.some(pWord => 
+                pWord.path.some(pathPos => pathPos.x === tilePos.x && pathPos.y === tilePos.y)
+            );
+            if (isHiddenForDebug) {
+                tile.background.setFillStyle(0xffff00);
+                return;
+            }
+        }
+    }
+    
+    tile.background.setFillStyle(0xffffff);
   }
 
   private isValidSelection(x: number, y: number): boolean {
