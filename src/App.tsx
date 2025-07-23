@@ -14,6 +14,10 @@ function App() {
         height: 800,
         parent: phaserRef.current,
         scene: [GameScene],
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH
+        },
       };
 
       gameRef.current = new Phaser.Game(config);

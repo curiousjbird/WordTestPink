@@ -57,6 +57,9 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive();
 
     submitButton.on('pointerdown', () => this.submitWord());
+    if (submitButton.input) {
+      submitButton.input.hitArea.setTo(-50, -20, 100, 40);
+    }
 
     const clearButton = this.add.text(this.cameras.main.width / 2 - 80, this.cameras.main.height - 50, 'Clear', {
         fontSize: '32px',
@@ -64,6 +67,9 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive();
 
     clearButton.on('pointerdown', () => this.clearSelection());
+    if (clearButton.input) {
+      clearButton.input.hitArea.setTo(-50, -20, 100, 40);
+    }
   }
 
   private createWeightedLetters() {
@@ -94,6 +100,11 @@ export class GameScene extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive();
 
         text.on('pointerdown', () => this.onLetterClicked(text, x, y));
+        
+        // Increase hit area for better touch sensitivity
+        if (text.input) {
+          text.input.hitArea.setTo(-25, -25, 50, 50);
+        }
 
         this.grid[y][x] = text;
       }
