@@ -65,11 +65,11 @@ export class GameScene extends Phaser.Scene {
   private setupUI() {
     this.foundWordsTextGroup = this.add.group();
 
-    this.currentWordText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 - 200, '', {
+    /* this.currentWordText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 - 200, '', {
       fontSize: '32px',
       color: '#ffffff',
       fontFamily: 'Outfit'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5); */
 
     this.scoreText = this.add.text(10, 10, 'Score: 0', {
       fontSize: '32px',
