@@ -14,8 +14,8 @@ export class GameScene extends Phaser.Scene {
     D: 4.3, L: 4.0, C: 2.8, U: 2.8, M: 2.4, W: 2.4, F: 2.2, G: 2.0, Y: 2.0,
     P: 1.9, B: 1.5, V: 1.0, K: 0.8, J: 0.2, X: 0.2, Q: 0.1, Z: 0.1,
   };
-  private readonly TILE_SIZE = 62;
-  private readonly CELL_SPACING = 132;
+  private tileSize: number = 0;
+  private cellSpacing: number = 0;
   private weightedLetters: string[] = [];
   private currentWord: string = '';
   private currentPath: { x: number; y: number }[] = [];
@@ -51,6 +51,11 @@ export class GameScene extends Phaser.Scene {
     this.wordList = this.cache.text.get('wordList').split('\n').map((s: string) => s.trim().toUpperCase());
     this.hiddenWordsList = this.cache.text.get('hiddenWords').split('\n').map((s: string) => s.trim().toUpperCase()).filter((w: string) => w.length > 0);
     this.debugSettings = this.cache.json.get('debugSettings');
+
+    const size = Math.min(this.cameras.main.width, this.cameras.main.height);
+    const gridContainerWidth = size * 0.8;
+    this.cellSpacing = gridContainerWidth / 5;
+    this.tileSize = this.cellSpacing * 0.9;
 
     this.createWeightedLetters();
     const letterLayout = this.generatePuzzleGrid();
@@ -272,8 +277,8 @@ export class GameScene extends Phaser.Scene {
   private createGrid(letterLayout: string[][]) {
     const rows = letterLayout.length;
     const columns = letterLayout[0].length;
-    const cellWidth = this.CELL_SPACING;
-    const cellHeight = this.CELL_SPACING;
+    const cellWidth = this.cellSpacing;
+    const cellHeight = this.cellSpacing;
     const gridWidth = (columns - 1) * cellWidth;
     
     const gridX = this.cameras.main.width / 2;
@@ -290,15 +295,15 @@ export class GameScene extends Phaser.Scene {
         const xPos = startX + x * cellWidth;
         const yPos = startY + y * cellHeight;
 
-        const background = this.add.rectangle(0, 0, this.TILE_SIZE, this.TILE_SIZE, 0xffffff);
+        const background = this.add.rectangle(0, 0, this.tileSize, this.tileSize, 0xffffff);
         const text = this.add.text(0, 0, letter, {
-          fontSize: '50px',
+          fontSize: `${this.tileSize * 0.8}px`,
           color: '#000000',
           fontFamily: 'VT323'
         }).setOrigin(0.5);
         
         const container = this.add.container(xPos, yPos, [ background, text ]);
-        const hitArea = new Phaser.Geom.Rectangle(-this.TILE_SIZE / 2, -this.TILE_SIZE / 2, this.TILE_SIZE, this.TILE_SIZE);
+        const hitArea = new Phaser.Geom.Rectangle(-this.tileSize / 2, -this.tileSize / 2, this.tileSize, this.tileSize);
         container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
 
         const letterTile: LetterTile = { container, text, background, letter };
@@ -333,8 +338,8 @@ export class GameScene extends Phaser.Scene {
         
         newGrid[newRow][newCol] = tile;
         
-        const newX = (newCol - 2) * this.CELL_SPACING;
-        const newY = (newRow - 2) * this.CELL_SPACING;
+        const newX = (newCol - 2) * this.cellSpacing;
+        const newY = (newRow - 2) * this.cellSpacing;
         
         this.tweens.add({
             targets: tile.container,
