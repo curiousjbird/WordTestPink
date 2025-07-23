@@ -437,12 +437,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private onLetterClicked(letterTile: LetterTile) {
-    if (this.isRotating) return;
-    
-    this.addLetterToSelection(letterTile);
-  }
-
   private isValidSelection(x: number, y: number): boolean {
     if (this.currentPath.length === 0) {
       return true; // First letter can be any letter
