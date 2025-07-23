@@ -28,6 +28,8 @@ export class GameScene extends Phaser.Scene {
   private gameTimer!: Phaser.Time.TimerEvent;
   private timerText!: Phaser.GameObjects.Text;
   private remainingTime: number = 180; // 3 minutes in seconds
+  private gridContainer!: Phaser.GameObjects.Container;
+  private isRotating: boolean = false;
 
   constructor() {
     super('GameScene');
@@ -87,6 +89,16 @@ export class GameScene extends Phaser.Scene {
     const clearHitArea = new Phaser.Geom.Rectangle(0, 0, 100, 50);
     clearButton.setInteractive(clearHitArea, Phaser.Geom.Rectangle.Contains);
     clearButton.on('pointerdown', () => this.clearSelection());
+
+    const rotateButton = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 120, 'Rotate', {
+      fontSize: '32px',
+      fontFamily: 'Outfit',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    const rotateHitArea = new Phaser.Geom.Rectangle(0, 0, 120, 50);
+    rotateButton.setInteractive(rotateHitArea, Phaser.Geom.Rectangle.Contains);
+    rotateButton.on('pointerdown', () => this.rotateBoard());
   }
   
   private setupTimer() {
@@ -142,8 +154,12 @@ export class GameScene extends Phaser.Scene {
     const cellHeight = 60;
     const gridWidth = (columns - 1) * cellWidth;
     
-    const startX = (this.cameras.main.width - gridWidth) / 2;
-    const startY = 250;
+    const gridX = this.cameras.main.width / 2;
+    const gridY = this.cameras.main.height / 2;
+    this.gridContainer = this.add.container(gridX, gridY);
+
+    const startX = -gridWidth / 2;
+    const startY = -gridWidth / 2;
 
     for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
@@ -168,11 +184,61 @@ export class GameScene extends Phaser.Scene {
         container.on('pointerdown', () => this.onLetterClicked(letterTile, x, y));
         
         this.grid[y][x] = letterTile;
+        this.gridContainer.add(container);
       }
     }
   }
 
+  private rotateBoard() {
+    if (this.isRotating) {
+      return;
+    }
+    this.isRotating = true;
+    this.clearSelection();
+
+    const newGrid: LetterTile[][] = Array.from({ length: 5 }, () => []);
+
+    // Animate each tile to its new position and update the logical grid
+    this.grid.flat().forEach((tile, index) => {
+      const oldRow = Math.floor(index / 5);
+      const oldCol = index % 5;
+      
+      const newRow = oldCol;
+      const newCol = 4 - oldRow;
+
+      const newX = (newCol - 2) * 60;
+      const newY = (newRow - 2) * 60;
+      
+      newGrid[newRow][newCol] = tile;
+      
+      this.tweens.add({
+        targets: tile.container,
+        x: newX,
+        y: newY,
+        duration: 500,
+        ease: 'Power2'
+      });
+    });
+
+    // Animate the main container and letters
+    this.tweens.add({
+      targets: this.gridContainer,
+      angle: '+=90',
+      duration: 500,
+      ease: 'Power2',
+      onComplete: () => {
+        this.gridContainer.each((child: Phaser.GameObjects.Container) => {
+          child.angle -= 90;
+        });
+        this.gridContainer.angle = 0;
+        this.grid = newGrid;
+        this.isRotating = false;
+      }
+    });
+  }
+
   private onLetterClicked(letterTile: LetterTile, x: number, y: number) {
+    if (this.isRotating) return;
     if (this.isValidSelection(x, y)) {
       this.currentWord += letterTile.letter;
       this.currentPath.push({ x, y });
@@ -261,9 +327,10 @@ export class GameScene extends Phaser.Scene {
     this.foundWordsTextGroup.clear(true, true);
     this.feedbackText.setText('');
     this.remainingTime = 180;
+    this.gameTimer.destroy();
     this.setupTimer();
 
-    this.grid.flat().forEach(tile => tile.container.destroy());
+    this.gridContainer.destroy();
     this.grid = [];
 
     this.createGrid();
