@@ -25,6 +25,9 @@ export class GameScene extends Phaser.Scene {
   private feedbackText!: Phaser.GameObjects.Text;
   private foundWords: string[] = [];
   private foundWordsTextGroup!: Phaser.GameObjects.Group;
+  private gameTimer!: Phaser.Time.TimerEvent;
+  private timerText!: Phaser.GameObjects.Text;
+  private remainingTime: number = 180; // 3 minutes in seconds
 
   constructor() {
     super('GameScene');
@@ -40,7 +43,11 @@ export class GameScene extends Phaser.Scene {
     this.createWeightedLetters();
     this.createGrid();
     this.displayGrid();
+    this.setupUI();
+    this.setupTimer();
+  }
 
+  private setupUI() {
     this.foundWordsTextGroup = this.add.group();
 
     this.currentWordText = this.add.text(10, 10, 'Word: ', {
@@ -75,11 +82,42 @@ export class GameScene extends Phaser.Scene {
         fontSize: '32px',
         color: '#ffff00',
         fontFamily: 'Outfit'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setInteractive();
     
     const clearHitArea = new Phaser.Geom.Rectangle(0, 0, 100, 50);
     clearButton.setInteractive(clearHitArea, Phaser.Geom.Rectangle.Contains);
     clearButton.on('pointerdown', () => this.clearSelection());
+  }
+  
+  private setupTimer() {
+    this.timerText = this.add.text(this.cameras.main.width - 10, 10, `Time: ${this.formatTime(this.remainingTime)}`, {
+        fontSize: '32px',
+        color: '#ffffff',
+        fontFamily: 'Outfit'
+    }).setOrigin(1, 0);
+
+    this.gameTimer = this.time.addEvent({
+        delay: 1000,
+        callback: this.updateTimer,
+        callbackScope: this,
+        loop: true
+    });
+  }
+  
+  private updateTimer() {
+    this.remainingTime--;
+    this.timerText.setText(`Time: ${this.formatTime(this.remainingTime)}`);
+
+    if (this.remainingTime <= 0) {
+        this.gameTimer.remove();
+        this.endGame();
+    }
+  }
+  
+  private formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
   private createWeightedLetters() {
@@ -222,11 +260,20 @@ export class GameScene extends Phaser.Scene {
     this.foundWords = [];
     this.foundWordsTextGroup.clear(true, true);
     this.feedbackText.setText('');
+    this.remainingTime = 180;
+    this.setupTimer();
 
     this.grid.flat().forEach(tile => tile.container.destroy());
     this.grid = [];
 
     this.createGrid();
+  }
+
+  private endGame() {
+    this.feedbackText.setText('Time\'s Up!').setColor('#ff0000');
+    // Disable interaction with letters
+    this.grid.flat().forEach(tile => tile.container.disableInteractive());
+    this.time.delayedCall(3000, () => this.resetGame());
   }
 
   private updateFoundWordsDisplay() {
