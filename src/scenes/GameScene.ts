@@ -40,7 +40,7 @@ export class GameScene extends Phaser.Scene {
 
   preload() {
     this.load.text('wordList', 'assets/words_english.txt');
-    this.load.text('hiddenWords', 'src/assets/wordlists/hiddenwords.txt');
+    this.load.text('hiddenWords', 'assets/wordlists/hiddenwords.txt');
     this.load.json('debugSettings', 'assets/debug.json');
   }
 
