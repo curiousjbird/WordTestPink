@@ -624,6 +624,7 @@ export class GameScene extends Phaser.Scene {
     this.foundWordsTextGroup.clear(true, true);
     this.feedbackText.setText('');
     this.remainingTime = 180;
+    this.timerText.setText(this.formatTime(this.remainingTime));
     this.gameTimer.destroy();
     this.setupTimer();
 
