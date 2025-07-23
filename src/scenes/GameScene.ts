@@ -32,6 +32,7 @@ export class GameScene extends Phaser.Scene {
   private isRotating: boolean = false;
   private hiddenWordsList: string[] = [];
   private placedWords: { word: string, path: {x: number, y: number}[] }[] = [];
+  private debugSettings: any;
 
   constructor() {
     super('GameScene');
@@ -40,11 +41,13 @@ export class GameScene extends Phaser.Scene {
   preload() {
     this.load.text('wordList', 'assets/words_english.txt');
     this.load.text('hiddenWords', 'src/assets/wordlists/hiddenwords.txt');
+    this.load.json('debugSettings', 'assets/debug.json');
   }
 
   create() {
     this.wordList = this.cache.text.get('wordList').split('\n').map((s: string) => s.trim().toUpperCase());
     this.hiddenWordsList = this.cache.text.get('hiddenWords').split('\n').map((s: string) => s.trim().toUpperCase()).filter((w: string) => w.length > 0);
+    this.debugSettings = this.cache.json.get('debugSettings');
 
     this.createWeightedLetters();
     const letterLayout = this.generatePuzzleGrid();
@@ -308,6 +311,14 @@ export class GameScene extends Phaser.Scene {
         this.grid[y][x] = letterTile;
         this.gridContainer.add(container);
       }
+    }
+    
+    if (this.debugSettings.show_hidden_words) {
+        this.placedWords.forEach(pWord => {
+            pWord.path.forEach(pos => {
+                this.grid[pos.y][pos.x].background.setFillStyle(0xffff00); // Yellow
+            });
+        });
     }
   }
 
