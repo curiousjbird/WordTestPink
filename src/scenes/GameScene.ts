@@ -20,7 +20,6 @@ export class GameScene extends Phaser.Scene {
   private currentWord: string = '';
   private currentPath: { x: number; y: number }[] = [];
   private selectedLetters: LetterTile[] = [];
-  private currentWordText!: Phaser.GameObjects.Text;
   private wordList: string[] = [];
   private score: number = 0;
   private scoreText!: Phaser.GameObjects.Text;
@@ -124,18 +123,6 @@ export class GameScene extends Phaser.Scene {
     this.levelText = this.add.text(10, 10, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
     this.goalText = this.add.text(10, 40, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
     this.scoreText = this.add.text(10, 70, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
-
-    this.currentWordText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 - 200, '', {
-      fontSize: '32px',
-      color: '#ffffff',
-      fontFamily: 'Outfit'
-    }).setOrigin(0.5);
-
-    this.scoreText = this.add.text(10, 10, 'Score: 0', {
-      fontSize: '32px',
-      color: '#ffffff',
-      fontFamily: 'Outfit'
-    });
 
     this.feedbackText = this.add.text(this.cameras.main.width / 2, 120, '', {
       fontSize: '24px',
@@ -499,7 +486,6 @@ export class GameScene extends Phaser.Scene {
       this.currentPath.push({ x: pos.x, y: pos.y });
       this.selectedLetters.push(letterTile);
       letterTile.background.setFillStyle(0x0000ff); // Blue
-      this.updateCurrentWordText();
     }
   }
   
@@ -509,7 +495,6 @@ export class GameScene extends Phaser.Scene {
         this.currentWord = this.currentWord.slice(0, -1);
         this.currentPath.pop();
         this.resetTileColor(lastTile);
-        this.updateCurrentWordText();
     }
   }
 
@@ -619,10 +604,6 @@ export class GameScene extends Phaser.Scene {
     return null;
   }
 
-  private updateCurrentWordText() {
-    this.currentWordText.setText(this.currentWord);
-  }
-
   private clearSelection(keepColor = false) {
     this.currentWord = '';
     this.currentPath = [];
@@ -645,7 +626,6 @@ export class GameScene extends Phaser.Scene {
         }
     });
     this.selectedLetters = [];
-    this.updateCurrentWordText();
   }
 
   private updateScore(word: string) {
