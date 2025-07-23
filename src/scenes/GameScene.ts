@@ -83,17 +83,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'Outfit'
     }).setOrigin(0.5);
 
-    const submitButton = this.add.text(this.cameras.main.width / 2 + 80, this.cameras.main.height - 50, 'Submit', {
-      fontSize: '32px',
-      color: '#00ff00',
-      fontFamily: 'Outfit'
-    }).setOrigin(0.5);
-
-    const submitHitArea = new Phaser.Geom.Rectangle(0, 0, 120, 50);
-    submitButton.setInteractive(submitHitArea, Phaser.Geom.Rectangle.Contains);
-    submitButton.on('pointerdown', () => this.submitWord());
-
-    const clearButton = this.add.text(this.cameras.main.width / 2 - 80, this.cameras.main.height - 50, 'Clear', {
+    const clearButton = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 50, 'Clear', {
         fontSize: '32px',
         color: '#ffff00',
         fontFamily: 'Outfit'
@@ -405,7 +395,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private endSwipe() {
+    if (!this.isSwiping) return;
     this.isSwiping = false;
+    
+    if (this.currentWord.length > 0) {
+        this.checkWord();
+    }
   }
 
   private getTileAt(worldX: number, worldY: number): LetterTile | null {
@@ -437,6 +432,61 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private checkWord() {
+    const word = this.currentWord;
+
+    if (word.length < 3) {
+        this.flashTiles(this.selectedLetters, 0xff0000); // Red for too short
+        this.time.delayedCall(500, () => this.clearSelection());
+        return;
+    }
+
+    if (this.foundWords.includes(word)) {
+        this.flashTiles(this.selectedLetters, 0xffff00); // Yellow for already found
+        this.time.delayedCall(500, () => this.clearSelection());
+        return;
+    }
+
+    if (this.wordList.includes(word)) {
+        this.foundWords.push(word);
+        this.updateScore(word);
+        this.updateFoundWordsDisplay();
+
+        const hiddenWord = this.placedWords.find(p => p.word === word);
+        if (hiddenWord) {
+             this.flashTiles(this.selectedLetters, 0x00ffff, true); // Cyan for hidden word
+        } else {
+            this.flashTiles(this.selectedLetters, 0x00ff00); // Green for valid
+        }
+    } else {
+      this.flashTiles(this.selectedLetters, 0xff0000); // Red for invalid
+    }
+  }
+
+  private flashTiles(tiles: LetterTile[], color: number, stay = false) {
+    tiles.forEach(tile => {
+        this.tweens.add({
+            targets: tile.background,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            yoyo: true,
+            duration: 200,
+            ease: 'Power2',
+            onStart: () => {
+                tile.background.setFillStyle(color);
+            },
+            onComplete: () => {
+                tile.background.scale = 1;
+                if (!stay) {
+                     this.time.delayedCall(300, () => this.clearSelection());
+                } else {
+                    this.clearSelection(true); // Clear selection but keep color for found hidden words
+                }
+            }
+        });
+    });
+  }
+
   private isValidSelection(x: number, y: number): boolean {
     if (this.currentPath.length === 0) {
       return true; // First letter can be any letter
@@ -465,57 +515,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private submitWord() {
-    const word = this.currentWord;
-
-    if (word.length < 3) {
-        this.feedbackText.setText('Word must be at least 3 letters').setColor('#ff0000');
-        this.time.delayedCall(1000, () => this.feedbackText.setText(''));
-        this.clearSelection();
-        return;
-    }
-
-    if (this.foundWords.includes(word)) {
-        this.feedbackText.setText('Already found!').setColor('#ffff00');
-        this.time.delayedCall(1000, () => this.feedbackText.setText(''));
-        this.clearSelection();
-        return;
-    }
-
-    if (this.wordList.includes(word)) {
-        this.foundWords.push(word);
-        this.updateScore(word);
-        this.updateFoundWordsDisplay();
-
-        const hiddenWord = this.placedWords.find(p => p.word === word);
-        if (hiddenWord) {
-            this.feedbackText.setText('Hidden Word Found!').setColor('#00ffff');
-            hiddenWord.path.forEach(pos => {
-                const tile = this.grid[pos.y][pos.x];
-                this.tweens.add({
-                    targets: tile.background,
-                    scaleX: 1.2,
-                    scaleY: 1.2,
-                    yoyo: true,
-                    duration: 200,
-                    ease: 'Power2'
-                });
-                tile.background.setFillStyle(0xffff00); // Yellow
-            });
-        } else {
-            this.feedbackText.setText('Valid Word!').setColor('#00ff00');
-        }
-    } else {
-      this.feedbackText.setText('Invalid Word').setColor('#ff0000');
-    }
-
-    this.time.delayedCall(1000, () => this.feedbackText.setText(''));
-    this.clearSelection();
+    this.checkWord();
   }
 
-  private clearSelection() {
+  private clearSelection(keepColor = false) {
     this.currentWord = '';
     this.currentPath = [];
     this.selectedLetters.forEach(tile => {
+        if (keepColor) return;
+        
         const tilePos = this.getTilePosition(tile);
         if (tilePos) {
             const isPartOfFoundHiddenWord = this.placedWords.some(pWord => 
