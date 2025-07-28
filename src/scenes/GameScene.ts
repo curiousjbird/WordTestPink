@@ -16,6 +16,8 @@ export class GameScene extends Phaser.Scene {
   };
   private tileSize: number = 0;
   private cellSpacing: number = 0;
+  // Swipe sensitivity setting - percentage of tile size to use as hit radius
+  private swipeHitRadiusPercent: number = 0.2; // 20% of tile size
   private weightedLetters: string[] = [];
   private currentWord: string = '';
   private currentPath: { x: number; y: number }[] = [];
@@ -465,8 +467,21 @@ export class GameScene extends Phaser.Scene {
     for (let y = 0; y < this.grid.length; y++) {
         for (let x = 0; x < this.grid[y].length; x++) {
             const tile = this.grid[y][x];
-            const bounds = tile.container.getBounds();
-            if (bounds.contains(worldX, worldY)) {
+            
+            // Get the world position of the tile center
+            const tileWorldPos = this.gridContainer.getWorldTransformMatrix().transformPoint(
+                tile.container.x, 
+                tile.container.y
+            );
+            
+            // Calculate distance from pointer to tile center
+            const dx = worldX - tileWorldPos.x;
+            const dy = worldY - tileWorldPos.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Check if pointer is within the circular hit area
+            const hitRadius = this.tileSize * this.swipeHitRadiusPercent;
+            if (distance <= hitRadius) {
                 return tile;
             }
         }
