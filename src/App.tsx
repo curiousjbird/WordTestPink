@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
+import { StartScene } from './scenes/StartScene';
 import { GameScene } from './scenes/GameScene';
 
 function App() {
@@ -13,7 +14,7 @@ function App() {
         width: 450,
         height: 800,
         parent: phaserRef.current,
-        scene: [GameScene],
+        scene: [StartScene, GameScene],
         backgroundColor: '#333333',
         scale: {
           mode: Phaser.Scale.FIT,
