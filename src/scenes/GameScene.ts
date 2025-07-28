@@ -498,8 +498,10 @@ export class GameScene extends Phaser.Scene {
             const dy = worldY - tileWorldPos.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // Check if pointer is within the circular hit area
-            const hitRadius = this.tileSize * this.swipeHitRadiusPercent;
+            // Use higher sensitivity (90%) for first letter, user setting for subsequent letters
+            const sensitivity = this.selectedLetters.length === 0 ? 0.9 : this.swipeHitRadiusPercent;
+            const hitRadius = this.tileSize * sensitivity;
+            
             if (distance <= hitRadius) {
                 return tile;
             }
