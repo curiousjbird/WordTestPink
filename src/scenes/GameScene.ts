@@ -1,10 +1,18 @@
 import Phaser from 'phaser';
 
+const SpecialTileType = {
+  NONE: 'none',
+  GOLD: 'gold'
+} as const;
+
+type SpecialTileType = typeof SpecialTileType[keyof typeof SpecialTileType];
+
 type LetterTile = {
     container: Phaser.GameObjects.Container;
     text: Phaser.GameObjects.Text;
     background: Phaser.GameObjects.Rectangle;
     letter: string;
+    specialType: SpecialTileType;
 };
 
 export class GameScene extends Phaser.Scene {
@@ -367,7 +375,7 @@ export class GameScene extends Phaser.Scene {
         const hitArea = new Phaser.Geom.Rectangle(-this.tileSize / 2, -this.tileSize / 2, this.tileSize, this.tileSize);
         container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
 
-        const letterTile: LetterTile = { container, text, background, letter };
+        const letterTile: LetterTile = { container, text, background, letter, specialType: SpecialTileType.NONE };
         
         this.grid[y][x] = letterTile;
         this.gridContainer.add(container);
@@ -380,6 +388,34 @@ export class GameScene extends Phaser.Scene {
                 this.grid[pos.y][pos.x].background.setFillStyle(0xffff00); // Yellow
             });
         });
+    }
+
+    // Assign one random tile as GOLD
+    this.assignSpecialTiles();
+  }
+
+  private assignSpecialTiles() {
+    // Get all tiles
+    const allTiles = this.grid.flat();
+    
+    // Randomly select one tile to be GOLD
+    const randomIndex = Phaser.Math.Between(0, allTiles.length - 1);
+    const goldTile = allTiles[randomIndex];
+    
+    goldTile.specialType = SpecialTileType.GOLD;
+    this.applySpecialTileVisuals(goldTile);
+  }
+
+  private applySpecialTileVisuals(tile: LetterTile) {
+    switch (tile.specialType) {
+      case SpecialTileType.GOLD:
+        // Add gold border
+        tile.background.setStrokeStyle(4, 0xffd700); // Gold color
+        break;
+      case SpecialTileType.NONE:
+      default:
+        // No special styling
+        break;
     }
   }
 
@@ -609,12 +645,16 @@ export class GameScene extends Phaser.Scene {
             );
             if (isHiddenForDebug) {
                 tile.background.setFillStyle(0xffff00);
+                // Still apply special tile visuals even for debug mode
+                this.applySpecialTileVisuals(tile);
                 return;
             }
         }
     }
     
     tile.background.setFillStyle(0xffffff);
+    // Reapply special tile visuals after resetting color
+    this.applySpecialTileVisuals(tile);
   }
 
   private isValidSelection(x: number, y: number): boolean {
@@ -656,9 +696,13 @@ export class GameScene extends Phaser.Scene {
 
             if (!isPartOfFoundHiddenWord) {
                 tile.background.setFillStyle(0xffffff); // White
+                // Reapply special tile visuals
+                this.applySpecialTileVisuals(tile);
             }
         } else {
             tile.background.setFillStyle(0xffffff); // Fallback for safety
+            // Reapply special tile visuals
+            this.applySpecialTileVisuals(tile);
         }
     });
     this.selectedLetters = [];
@@ -677,8 +721,32 @@ export class GameScene extends Phaser.Scene {
         points *= 2; // Double points for hidden words
     }
 
+    // Check for special tile bonuses
+    const specialBonusMultiplier = this.calculateSpecialTileBonus();
+    points *= specialBonusMultiplier;
+
     this.score += points;
     this.scoreText.setText(`Score: ${this.score}`);
+  }
+
+  private calculateSpecialTileBonus(): number {
+    let multiplier = 1;
+    
+    // Check if any selected tiles are special
+    for (const tile of this.selectedLetters) {
+      switch (tile.specialType) {
+        case SpecialTileType.GOLD:
+          multiplier *= 2; // GOLD tile doubles the score
+          break;
+        // Future special tiles can be added here
+        case SpecialTileType.NONE:
+        default:
+          // No bonus
+          break;
+      }
+    }
+    
+    return multiplier;
   }
 
   private resetGame() {
