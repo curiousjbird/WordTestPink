@@ -17,7 +17,7 @@ export class GameScene extends Phaser.Scene {
   private tileSize: number = 0;
   private cellSpacing: number = 0;
   // Swipe sensitivity setting - percentage of tile size to use as hit radius
-  private swipeHitRadiusPercent: number = 0.2; // 20% of tile size
+  private swipeHitRadiusPercent: number = 0.25; // 20% of tile size
   private weightedLetters: string[] = [];
   private currentWord: string = '';
   private currentPath: { x: number; y: number }[] = [];
