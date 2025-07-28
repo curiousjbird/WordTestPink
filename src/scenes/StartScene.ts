@@ -16,7 +16,7 @@ export class StartScene extends Phaser.Scene {
     this.loadSettings();
 
     // Title
-    const title = this.add.text(this.cameras.main.width / 2, 200, 'Gobblefunk', {
+    this.add.text(this.cameras.main.width / 2, 200, 'Gobblefunk', {
       fontSize: '48px',
       color: '#ffffff',
       fontFamily: 'Outfit',
@@ -24,7 +24,7 @@ export class StartScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Subtitle
-    const subtitle = this.add.text(this.cameras.main.width / 2, 260, 'A Word Discovery Game', {
+    this.add.text(this.cameras.main.width / 2, 260, 'A Word Discovery Game', {
       fontSize: '20px',
       color: '#cccccc',
       fontFamily: 'Outfit'
@@ -33,7 +33,7 @@ export class StartScene extends Phaser.Scene {
     // Play button
     const playButton = this.add.rectangle(this.cameras.main.width / 2, 400, 200, 60, 0xffffff);
     playButton.setStrokeStyle(2, 0xffffff);
-    const playText = this.add.text(this.cameras.main.width / 2, 400, 'PLAY', {
+    this.add.text(this.cameras.main.width / 2, 400, 'PLAY', {
       fontSize: '24px',
       color: '#000000',
       fontFamily: 'Outfit',
