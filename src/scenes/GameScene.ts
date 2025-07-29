@@ -42,9 +42,7 @@ export class GameScene extends Phaser.Scene {
   private feedbackText!: Phaser.GameObjects.Text;
   private foundWords: string[] = [];
   private foundWordsTextGroup!: Phaser.GameObjects.Group;
-  private gameTimer!: Phaser.Time.TimerEvent;
-  private timerText!: Phaser.GameObjects.Text;
-  private remainingTime: number = 180; // 3 minutes in seconds
+  // Timer removed - now goal-based gameplay
   private gridContainer!: Phaser.GameObjects.Container;
   private isRotating: boolean = false;
   private isSwiping: boolean = false;
@@ -114,7 +112,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.currentGoal = levelInfo.goal;
-    this.remainingTime = levelInfo.time_limit_sec;
     this.score = 0;
     
     this.foundWords = [];
@@ -130,10 +127,9 @@ export class GameScene extends Phaser.Scene {
     const letterLayout = this.generatePuzzleGrid();
     this.createGrid(letterLayout);
     this.displayGrid();
-
-    if (this.gameTimer) this.gameTimer.destroy();
-    if(this.timerText) this.timerText.destroy();
-    this.setupTimer();
+    
+    // Re-enable interactions for new level
+    this.grid.flat().forEach(tile => tile.container.setInteractive());
   }
 
   private setupUI() {
@@ -180,36 +176,7 @@ export class GameScene extends Phaser.Scene {
     settingsButton.on('pointerdown', () => this.openSettings());
   }
   
-  private setupTimer() {
-    this.timerText = this.add.text(this.cameras.main.width - 10, 10, this.formatTime(this.remainingTime), {
-        fontSize: '32px',
-        color: '#ffffff',
-        fontFamily: 'Outfit'
-    }).setOrigin(1, 0);
-
-    this.gameTimer = this.time.addEvent({
-        delay: 1000,
-        callback: this.updateTimer,
-        callbackScope: this,
-        loop: true
-    });
-  }
-  
-  private updateTimer() {
-    this.remainingTime--;
-    this.timerText.setText(this.formatTime(this.remainingTime));
-
-    if (this.remainingTime <= 0) {
-        this.gameTimer.remove();
-        this.endGame();
-    }
-  }
-  
-  private formatTime(seconds: number): string {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
+  // Timer methods removed - now using goal-based progression
 
   private createWeightedLetters() {
     this.weightedLetters = [];
@@ -727,6 +694,73 @@ export class GameScene extends Phaser.Scene {
 
     this.score += points;
     this.scoreText.setText(`Score: ${this.score}`);
+    
+    // Check if goal is reached
+    if (this.score >= this.currentGoal) {
+      this.showLevelCompletePopup();
+    }
+  }
+
+  private showLevelCompletePopup() {
+    // Disable further interactions
+    this.isSwiping = false;
+    this.grid.flat().forEach(tile => tile.container.disableInteractive());
+
+    const modalWidth = 400;
+    const modalHeight = 250;
+    const centerX = this.cameras.main.width / 2;
+    const centerY = this.cameras.main.height / 2;
+
+    // Background overlay
+    const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.7);
+    overlay.setOrigin(0);
+
+    // Modal background
+    const modalBg = this.add.rectangle(0, 0, modalWidth, modalHeight, 0xffffff);
+    modalBg.setStrokeStyle(2, 0x00ff00);
+
+    // Title
+    const title = this.add.text(0, -modalHeight/2 + 40, `You beat level ${this.currentLevel}!`, {
+      fontSize: '24px',
+      color: '#000000',
+      fontFamily: 'Outfit',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    // Score text
+    const scoreText = this.add.text(0, -20, `with a score of ${this.score}`, {
+      fontSize: '20px',
+      color: '#333333',
+      fontFamily: 'Outfit'
+    }).setOrigin(0.5);
+
+    // Question text
+    const questionText = this.add.text(0, 20, 'Are you ready for the next level?', {
+      fontSize: '18px',
+      color: '#333333',
+      fontFamily: 'Outfit'
+    }).setOrigin(0.5);
+
+    // OK button
+    const okButton = this.add.rectangle(0, modalHeight/2 - 40, 120, 40, 0x28a745);
+    const okText = this.add.text(0, modalHeight/2 - 40, 'OK', {
+      fontSize: '18px',
+      color: '#ffffff',
+      fontFamily: 'Outfit'
+    }).setOrigin(0.5);
+    
+    okButton.setInteractive();
+    okButton.on('pointerdown', () => {
+      // Destroy popup and start next level
+      popup.destroy();
+      this.setupLevel(this.currentLevel + 1);
+    });
+
+    // Create container
+    const popup = this.add.container(centerX, centerY, [
+      overlay, modalBg, title, scoreText, questionText, okButton, okText
+    ]);
+    popup.setDepth(1000);
   }
 
   private calculateSpecialTileBonus(): number {
@@ -753,17 +787,7 @@ export class GameScene extends Phaser.Scene {
     this.setupLevel(1);
   }
 
-  private endGame() {
-    this.grid.flat().forEach(tile => tile.container.disableInteractive());
-    
-    if (this.score >= this.currentGoal) {
-        this.feedbackText.setText('Level Complete!').setColor('#00ff00').setDepth(1);
-        this.time.delayedCall(2000, () => this.setupLevel(this.currentLevel + 1));
-    } else {
-        this.feedbackText.setText('Game Over!').setColor('#ff0000').setDepth(1);
-        this.time.delayedCall(3000, () => this.resetGame());
-    }
-  }
+  // endGame method removed - goals are checked immediately in updateScore
 
   private updateFoundWordsDisplay() {
       this.foundWordsTextGroup.clear(true, true);
