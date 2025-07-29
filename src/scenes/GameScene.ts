@@ -783,11 +783,7 @@ export class GameScene extends Phaser.Scene {
     return multiplier;
   }
 
-  private resetGame() {
-    this.setupLevel(1);
-  }
-
-  // endGame method removed - goals are checked immediately in updateScore
+  // resetGame and endGame methods removed - goals are checked immediately in updateScore
 
   private updateFoundWordsDisplay() {
       this.foundWordsTextGroup.clear(true, true);
