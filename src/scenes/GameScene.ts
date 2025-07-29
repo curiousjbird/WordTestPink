@@ -76,7 +76,8 @@ export class GameScene extends Phaser.Scene {
     this.load.text('hiddenWords', 'assets/wordlists/hiddenwords.txt');
     this.load.json('debugSettings', 'assets/debug.json');
     this.load.text('levelData', 'assets/data_files/level_detail.csv');
-    this.load.svg('bookmarkIcon', 'assets/icons/bookmark.svg', { width: 32, height: 32 });
+    this.load.svg('bookmarkIcon', 'assets/icons/bookmarklet.svg', { width: 32, height: 32 });
+    this.load.svg('rotateIcon', 'assets/icons/clockwise-rotation.svg', { width: 32, height: 32 });
   }
 
   create() {
@@ -156,24 +157,12 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'Outfit'
     }).setOrigin(0.5);
 
-    const clearButton = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 50, 'Clear', {
-        fontSize: '32px',
-        color: '#ffff00',
-        fontFamily: 'Outfit'
-    }).setOrigin(0.5).setInteractive();
-    
-    const clearHitArea = new Phaser.Geom.Rectangle(0, 0, 100, 50);
-    clearButton.setInteractive(clearHitArea, Phaser.Geom.Rectangle.Contains);
-    clearButton.on('pointerdown', () => this.clearSelection());
 
-    const rotateButton = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 120, 'Rotate', {
-      fontSize: '32px',
-      fontFamily: 'Outfit',
-      color: '#ffffff'
-    }).setOrigin(0.5);
 
-    const rotateHitArea = new Phaser.Geom.Rectangle(0, 0, 120, 50);
-    rotateButton.setInteractive(rotateHitArea, Phaser.Geom.Rectangle.Contains);
+    const rotateButton = this.add.image(this.cameras.main.width / 2, this.cameras.main.height - 120, 'rotateIcon');
+    rotateButton.setScale(0.8);
+    rotateButton.setTint(0xffffff); // Make it white
+    rotateButton.setInteractive();
     rotateButton.on('pointerdown', () => this.rotateBoard());
 
     // Bookmark icon for discovered words (above rotate button)
