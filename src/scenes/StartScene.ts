@@ -11,6 +11,10 @@ export class StartScene extends Phaser.Scene {
     super('StartScene');
   }
 
+  preload() {
+    this.load.svg('settingsIcon', 'assets/icons/settings-knobs.svg', { width: 32, height: 32 });
+  }
+
   create() {
     // Load settings
     this.loadSettings();
@@ -49,14 +53,11 @@ export class StartScene extends Phaser.Scene {
       playButton.setFillStyle(0xffffff);
     });
 
-    // Settings gear icon
-    const settingsButton = this.add.text(60, this.cameras.main.height - 60, '⚙️', {
-      fontSize: '32px',
-      fontFamily: 'Outfit'
-    }).setOrigin(0.5);
-
-    const settingsHitArea = new Phaser.Geom.Rectangle(0, 0, 60, 60);
-    settingsButton.setInteractive(settingsHitArea, Phaser.Geom.Rectangle.Contains);
+    // Settings icon
+    const settingsButton = this.add.image(60, this.cameras.main.height - 60, 'settingsIcon');
+    settingsButton.setScale(0.8);
+    settingsButton.setTint(0xffffff); // Make it white
+    settingsButton.setInteractive();
     settingsButton.on('pointerdown', () => this.openSettings());
   }
 
