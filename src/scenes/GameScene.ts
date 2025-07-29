@@ -78,6 +78,7 @@ export class GameScene extends Phaser.Scene {
     this.load.text('levelData', 'assets/data_files/level_detail.csv');
     this.load.svg('bookmarkIcon', 'assets/icons/bookmarklet.svg', { width: 32, height: 32 });
     this.load.svg('rotateIcon', 'assets/icons/clockwise-rotation.svg', { width: 32, height: 32 });
+    this.load.svg('settingsIcon', 'assets/icons/settings-knobs.svg', { width: 32, height: 32 });
   }
 
   create() {
@@ -172,14 +173,11 @@ export class GameScene extends Phaser.Scene {
     bookmarkIcon.setInteractive();
     bookmarkIcon.on('pointerdown', () => this.toggleWordsPanel());
 
-    // Settings gear icon
-    const settingsButton = this.add.text(60, this.cameras.main.height - 60, '⚙️', {
-      fontSize: '32px',
-      fontFamily: 'Outfit'
-    }).setOrigin(0.5);
-
-    const settingsHitArea = new Phaser.Geom.Rectangle(0, 0, 60, 60);
-    settingsButton.setInteractive(settingsHitArea, Phaser.Geom.Rectangle.Contains);
+    // Settings icon
+    const settingsButton = this.add.image(60, this.cameras.main.height - 60, 'settingsIcon');
+    settingsButton.setScale(0.8);
+    settingsButton.setTint(0xffffff); // Make it white
+    settingsButton.setInteractive();
     settingsButton.on('pointerdown', () => this.openSettings());
 
     // Initialize panel width (3/4 of screen width)
@@ -829,6 +827,19 @@ export class GameScene extends Phaser.Scene {
     const startX = this.cameras.main.width;
     const endX = this.cameras.main.width - this.panelWidth;
 
+    // Background overlay (covers the area behind the panel)
+    const backgroundOverlay = this.add.rectangle(
+      this.cameras.main.width / 2, 
+      this.cameras.main.height / 2, 
+      this.cameras.main.width, 
+      this.cameras.main.height, 
+      0x000000, 
+      0.5
+    );
+    backgroundOverlay.setInteractive();
+    backgroundOverlay.on('pointerdown', () => this.closeSlidingPanel());
+    backgroundOverlay.setDepth(450); // Behind the panel but above everything else
+
     // Panel background
     const panelBg = this.add.rectangle(0, 0, this.panelWidth, panelHeight, 0xffffff);
     panelBg.setOrigin(0, 0.5);
@@ -866,7 +877,7 @@ export class GameScene extends Phaser.Scene {
 
     // Create panel container
     this.slidingPanel = this.add.container(startX, this.cameras.main.height / 2, [
-      panelBg, closeButton, title, wordsContainer
+      backgroundOverlay, panelBg, closeButton, title, wordsContainer
     ]);
     this.slidingPanel.setDepth(500);
 
