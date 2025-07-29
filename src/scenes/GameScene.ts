@@ -343,7 +343,8 @@ export class GameScene extends Phaser.Scene {
         const text = this.add.text(0, 0, letter, {
           fontSize: `${this.tileSize * 0.8}px`,
           color: '#000000',
-          fontFamily: 'VT323'
+          fontFamily: 'Outfit',
+          fontStyle: 'bold'
         }).setOrigin(0.5);
         
         const container = this.add.container(xPos, yPos, [ background, text ]);
@@ -576,6 +577,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private flashTiles(tiles: LetterTile[], color: number, stay = false) {
+    let completedTweens = 0;
     tiles.forEach(tile => {
         this.tweens.add({
             targets: tile.background,
@@ -589,10 +591,15 @@ export class GameScene extends Phaser.Scene {
             },
             onComplete: () => {
                 tile.background.scale = 1;
-                if (!stay) {
-                     this.time.delayedCall(300, () => this.clearSelection());
-                } else {
-                    this.clearSelection(true); // Clear selection but keep color for found hidden words
+                completedTweens++;
+                
+                // Only clear selection after all tiles have finished animating
+                if (completedTweens === tiles.length) {
+                    if (!stay) {
+                        this.time.delayedCall(300, () => this.clearSelection());
+                    } else {
+                        this.clearSelection(true); // Clear selection but keep color for found hidden words
+                    }
                 }
             }
         });
@@ -719,8 +726,14 @@ export class GameScene extends Phaser.Scene {
     const centerY = this.cameras.main.height / 2;
 
     // Background overlay
-    const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.7);
-    overlay.setOrigin(0);
+    const overlay = this.add.rectangle(
+      -centerX, 
+      -centerY, 
+      this.cameras.main.width, 
+      this.cameras.main.height, 
+      0x000000, 
+      0.7
+    );
 
     // Modal background
     const modalBg = this.add.rectangle(0, 0, modalWidth, modalHeight, 0xffffff);
@@ -937,8 +950,14 @@ export class GameScene extends Phaser.Scene {
     const centerY = this.cameras.main.height / 2;
 
     // Background overlay
-    const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.7);
-    overlay.setOrigin(0);
+    const overlay = this.add.rectangle(
+      -centerX, 
+      -centerY, 
+      this.cameras.main.width, 
+      this.cameras.main.height, 
+      0x000000, 
+      0.7
+    );
 
     // Modal background
     const modalBg = this.add.rectangle(0, 0, modalWidth, modalHeight, 0xffffff);

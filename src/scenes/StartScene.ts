@@ -103,8 +103,14 @@ export class StartScene extends Phaser.Scene {
     const centerY = this.cameras.main.height / 2;
 
     // Background overlay
-    const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.7);
-    overlay.setOrigin(0);
+    const overlay = this.add.rectangle(
+      -centerX, 
+      -centerY, 
+      this.cameras.main.width, 
+      this.cameras.main.height, 
+      0x000000, 
+      0.7
+    );
 
     // Modal background
     const modalBg = this.add.rectangle(0, 0, modalWidth, modalHeight, 0xffffff);
