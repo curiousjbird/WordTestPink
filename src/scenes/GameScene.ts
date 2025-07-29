@@ -62,6 +62,15 @@ export class GameScene extends Phaser.Scene {
     super('GameScene');
   }
 
+  init(data?: { startLevel?: number }) {
+    // Handle initialization data from shop scene or direct start
+    if (data && data.startLevel) {
+      this.currentLevel = data.startLevel;
+    } else {
+      this.currentLevel = 1;
+    }
+  }
+
   preload() {
     this.load.text('wordList', 'assets/words_english.txt');
     this.load.text('hiddenWords', 'assets/wordlists/hiddenwords.txt');
@@ -746,30 +755,30 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Question text
-    const questionText = this.add.text(0, 20, 'Are you ready for the next level?', {
+    const questionText = this.add.text(0, 20, 'Visit the shop before next level?', {
       fontSize: '18px',
       color: '#333333',
       fontFamily: 'Outfit'
     }).setOrigin(0.5);
 
-    // OK button
-    const okButton = this.add.rectangle(0, modalHeight/2 - 40, 120, 40, 0x28a745);
-    const okText = this.add.text(0, modalHeight/2 - 40, 'OK', {
+    // Shop button
+    const shopButton = this.add.rectangle(0, modalHeight/2 - 40, 120, 40, 0x28a745);
+    const shopText = this.add.text(0, modalHeight/2 - 40, 'SHOP', {
       fontSize: '18px',
       color: '#ffffff',
       fontFamily: 'Outfit'
     }).setOrigin(0.5);
     
-    okButton.setInteractive();
-    okButton.on('pointerdown', () => {
-      // Destroy popup and start next level
+    shopButton.setInteractive();
+    shopButton.on('pointerdown', () => {
+      // Destroy popup and go to shop
       popup.destroy();
-      this.setupLevel(this.currentLevel + 1);
+      this.scene.start('ShopScene', { level: this.currentLevel, score: this.score });
     });
 
     // Create container
     const popup = this.add.container(centerX, centerY, [
-      overlay, modalBg, title, scoreText, questionText, okButton, okText
+      overlay, modalBg, title, scoreText, questionText, shopButton, shopText
     ]);
     popup.setDepth(1000);
   }

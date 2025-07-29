@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { StartScene } from './scenes/StartScene';
 import { GameScene } from './scenes/GameScene';
+import { ShopScene } from './scenes/ShopScene';
 
 function App() {
   const phaserRef = useRef<HTMLDivElement>(null);
@@ -14,7 +15,7 @@ function App() {
         width: 450,
         height: 800,
         parent: phaserRef.current,
-        scene: [StartScene, GameScene],
+        scene: [StartScene, GameScene, ShopScene],
         backgroundColor: '#333333',
         scale: {
           mode: Phaser.Scale.FIT,
