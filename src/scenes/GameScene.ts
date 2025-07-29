@@ -33,6 +33,10 @@ export class GameScene extends Phaser.Scene {
   };
   private settingsModal!: Phaser.GameObjects.Container;
   private isSettingsOpen: boolean = false;
+  // Sliding panel system
+  private slidingPanel!: Phaser.GameObjects.Container;
+  private isPanelOpen: boolean = false;
+  private panelWidth: number = 0;
   private currentWord: string = '';
   private currentPath: { x: number; y: number }[] = [];
   private selectedLetters: LetterTile[] = [];
@@ -41,7 +45,6 @@ export class GameScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private feedbackText!: Phaser.GameObjects.Text;
   private foundWords: string[] = [];
-  private foundWordsTextGroup!: Phaser.GameObjects.Group;
   // Timer removed - now goal-based gameplay
   private gridContainer!: Phaser.GameObjects.Container;
   private isRotating: boolean = false;
@@ -64,6 +67,7 @@ export class GameScene extends Phaser.Scene {
     this.load.text('hiddenWords', 'assets/wordlists/hiddenwords.txt');
     this.load.json('debugSettings', 'assets/debug.json');
     this.load.text('levelData', 'assets/data_files/level_detail.csv');
+    this.load.svg('bookmarkIcon', 'assets/icons/bookmark.svg', { width: 32, height: 32 });
   }
 
   create() {
@@ -115,7 +119,6 @@ export class GameScene extends Phaser.Scene {
     this.score = 0;
     
     this.foundWords = [];
-    if (this.foundWordsTextGroup) this.foundWordsTextGroup.clear(true, true);
     if(this.feedbackText) this.feedbackText.setText('');
     
     this.levelText.setText(`Level: ${this.currentLevel}`);
@@ -133,7 +136,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupUI() {
-    this.foundWordsTextGroup = this.add.group();
 
     this.levelText = this.add.text(10, 10, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
     this.goalText = this.add.text(10, 40, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
@@ -165,6 +167,13 @@ export class GameScene extends Phaser.Scene {
     rotateButton.setInteractive(rotateHitArea, Phaser.Geom.Rectangle.Contains);
     rotateButton.on('pointerdown', () => this.rotateBoard());
 
+    // Bookmark icon for discovered words (above rotate button)
+    const bookmarkIcon = this.add.image(this.cameras.main.width / 2, this.cameras.main.height - 180, 'bookmarkIcon');
+    bookmarkIcon.setScale(0.8);
+    bookmarkIcon.setTint(0xffffff); // Make it white
+    bookmarkIcon.setInteractive();
+    bookmarkIcon.on('pointerdown', () => this.toggleWordsPanel());
+
     // Settings gear icon
     const settingsButton = this.add.text(60, this.cameras.main.height - 60, '⚙️', {
       fontSize: '32px',
@@ -174,6 +183,9 @@ export class GameScene extends Phaser.Scene {
     const settingsHitArea = new Phaser.Geom.Rectangle(0, 0, 60, 60);
     settingsButton.setInteractive(settingsHitArea, Phaser.Geom.Rectangle.Contains);
     settingsButton.on('pointerdown', () => this.openSettings());
+
+    // Initialize panel width (3/4 of screen width)
+    this.panelWidth = this.cameras.main.width * 0.75;
   }
   
   // Timer methods removed - now using goal-based progression
@@ -446,7 +458,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private startSwipe(pointer: Phaser.Input.Pointer) {
-    if (this.isRotating || this.isSettingsOpen) return;
+    if (this.isRotating || this.isSettingsOpen || this.isPanelOpen) return;
 
     const letterTile = this.getTileAt(pointer.worldX, pointer.worldY);
     if (letterTile) {
@@ -457,7 +469,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleSwipeMove(pointer: Phaser.Input.Pointer) {
-    if (!this.isSwiping || this.isSettingsOpen) return;
+    if (!this.isSwiping || this.isSettingsOpen || this.isPanelOpen) return;
 
     const letterTile = this.getTileAt(pointer.worldX, pointer.worldY);
     if (!letterTile) {
@@ -477,7 +489,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private endSwipe() {
-    if (!this.isSwiping || this.isSettingsOpen) return;
+    if (!this.isSwiping || this.isSettingsOpen || this.isPanelOpen) return;
     this.isSwiping = false;
     
     if (this.currentWord.length > 0) {
@@ -555,7 +567,6 @@ export class GameScene extends Phaser.Scene {
     if (this.wordList.includes(word)) {
         this.foundWords.push(word);
         this.updateScore(word);
-        this.updateFoundWordsDisplay();
 
         const hiddenWord = this.placedWords.find(p => p.word === word);
         if (hiddenWord) {
@@ -783,27 +794,91 @@ export class GameScene extends Phaser.Scene {
     return multiplier;
   }
 
-  // resetGame and endGame methods removed - goals are checked immediately in updateScore
+  // Word display now handled by sliding panel instead of on-screen display
 
-  private updateFoundWordsDisplay() {
-      this.foundWordsTextGroup.clear(true, true);
-      const gridBounds = this.gridContainer.getBounds();
-      let yPos = gridBounds.bottom + 40;
-      const columns = 5;
-      const columnWidth = 80;
+  private toggleWordsPanel() {
+    if (this.isPanelOpen) {
+      this.closeSlidingPanel();
+    } else {
+      this.openSlidingPanel();
+    }
+  }
 
-      this.foundWords.forEach((word, index) => {
-          const xPos = (this.cameras.main.width / 2) - (columnWidth * (columns-1) / 2) + ((index % columns) * columnWidth);
-          if (index > 0 && index % columns === 0) {
-              yPos += 25;
-          }
-          const text = this.add.text(xPos, yPos, word, {
-              fontSize: '18px',
-              color: '#00ffff', // Blue color
-              fontFamily: 'Outfit'
-          }).setOrigin(0.5);
-          this.foundWordsTextGroup.add(text);
-      });
+  private openSlidingPanel() {
+    if (this.isPanelOpen) return;
+    this.isPanelOpen = true;
+    this.createWordsPanel();
+  }
+
+  private closeSlidingPanel() {
+    if (!this.isPanelOpen) return;
+    this.isPanelOpen = false;
+    
+    // Animate panel sliding out to the right
+    this.tweens.add({
+      targets: this.slidingPanel,
+      x: this.cameras.main.width,
+      duration: 300,
+      ease: 'Power2',
+      onComplete: () => {
+        this.slidingPanel.destroy();
+      }
+    });
+  }
+
+  private createWordsPanel() {
+    const panelHeight = this.cameras.main.height;
+    const startX = this.cameras.main.width;
+    const endX = this.cameras.main.width - this.panelWidth;
+
+    // Panel background
+    const panelBg = this.add.rectangle(0, 0, this.panelWidth, panelHeight, 0xffffff);
+    panelBg.setOrigin(0, 0.5);
+    panelBg.setStrokeStyle(2, 0x333333);
+
+    // Close button (X)
+    const closeButton = this.add.text(this.panelWidth - 30, -panelHeight/2 + 30, '✕', {
+      fontSize: '24px',
+      color: '#666666',
+      fontFamily: 'Outfit'
+    }).setOrigin(0.5);
+    closeButton.setInteractive();
+    closeButton.on('pointerdown', () => this.closeSlidingPanel());
+
+    // Title
+    const title = this.add.text(20, -panelHeight/2 + 40, 'Discovered Words', {
+      fontSize: '24px',
+      color: '#000000',
+      fontFamily: 'Outfit',
+      fontStyle: 'bold'
+    }).setOrigin(0, 0.5);
+
+    // Words list
+    const wordsContainer = this.add.container(20, -panelHeight/2 + 80);
+    
+    this.foundWords.forEach((word, index) => {
+      const yPos = index * 30;
+      const wordText = this.add.text(0, yPos, word, {
+        fontSize: '18px',
+        color: '#333333',
+        fontFamily: 'Outfit'
+      }).setOrigin(0, 0.5);
+      wordsContainer.add(wordText);
+    });
+
+    // Create panel container
+    this.slidingPanel = this.add.container(startX, this.cameras.main.height / 2, [
+      panelBg, closeButton, title, wordsContainer
+    ]);
+    this.slidingPanel.setDepth(500);
+
+    // Animate panel sliding in from the right
+    this.tweens.add({
+      targets: this.slidingPanel,
+      x: endX,
+      duration: 300,
+      ease: 'Power2'
+    });
   }
 
   private displayGrid() {
