@@ -76,7 +76,7 @@ export class ShopScene extends Phaser.Scene {
     const continueButton = this.add.rectangle(this.cameras.main.width / 2, 620, 200, 50, 0x27ae60);
     continueButton.setStrokeStyle(2, 0x2ecc71);
     
-    const continueText = this.add.text(this.cameras.main.width / 2, 620, 'CONTINUE', {
+    this.add.text(this.cameras.main.width / 2, 620, 'CONTINUE', {
       fontSize: '20px',
       color: '#ffffff',
       fontFamily: 'Outfit',
