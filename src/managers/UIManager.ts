@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GameStateManager } from './GameStateManager';
-import { LetterTile } from './GridManager';
+import type { LetterTile } from './GridManager';
 
 export class UIManager {
     private scene: Phaser.Scene;
@@ -9,7 +9,6 @@ export class UIManager {
     private levelText!: Phaser.GameObjects.Text;
     private goalText!: Phaser.GameObjects.Text;
     private scoreText!: Phaser.GameObjects.Text;
-    private feedbackText!: Phaser.GameObjects.Text;
     private slidingPanel!: Phaser.GameObjects.Container;
     private isPanelOpen: boolean = false;
     private panelWidth: number = 0;
@@ -25,7 +24,7 @@ export class UIManager {
         this.goalText = this.scene.add.text(10, 40, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
         this.scoreText = this.scene.add.text(10, 70, '', { fontSize: '24px', color: '#ffffff', fontFamily: 'Outfit' });
 
-        this.feedbackText = this.scene.add.text(this.scene.cameras.main.width / 2, 120, '', {
+        this.scene.add.text(this.scene.cameras.main.width / 2, 120, '', {
             fontSize: '24px', color: '#ff0000', fontFamily: 'Outfit'
         }).setOrigin(0.5);
 

@@ -102,7 +102,7 @@ export class SettingsManager {
             fontSize: '16px', color: '#666666', fontFamily: 'Outfit'
         }).setOrigin(0.5);
 
-        sliderHandle.on('drag', (pointer: Phaser.Input.Pointer, dragX: number) => {
+        sliderHandle.on('drag', (dragX: number) => {
             const clampedX = Phaser.Math.Clamp(dragX, -sliderTrackWidth/2, sliderTrackWidth/2);
             sliderHandle.x = clampedX;
 

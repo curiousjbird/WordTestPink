@@ -1,5 +1,3 @@
-import { GameStateManager } from './GameStateManager';
-
 export class WordManager {
     private wordList: Set<string>;
     private hiddenWordsList: string[];
