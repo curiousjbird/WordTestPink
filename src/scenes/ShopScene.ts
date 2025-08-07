@@ -28,7 +28,7 @@ export class ShopScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Level completion text
-    this.add.text(this.cameras.main.width / 2, 140, `Level ${this.currentLevel} Complete!`, {
+    this.add.text(this.cameras.main.width / 2, 140, `Level ${this.currentLevel - 1} Complete!`, {
       fontSize: '24px',
       color: '#f1c40f',
       fontFamily: 'Outfit'
@@ -143,6 +143,6 @@ export class ShopScene extends Phaser.Scene {
 
   private continueToNextLevel() {
     // Return to GameScene and start the next level
-    this.scene.start('GameScene', { startLevel: this.currentLevel + 1 });
+    this.scene.start('GameScene', { startLevel: this.currentLevel });
   }
 }
