@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { SettingsManager, GameSettings } from '../managers/SettingsManager';
+import { SettingsManager } from '../managers/SettingsManager';
 import { GameStateManager } from '../managers/GameStateManager';
 import { WordManager } from '../managers/WordManager';
-import { GridManager, LetterTile } from '../managers/GridManager';
+import { GridManager } from '../managers/GridManager';
 import { UIManager } from '../managers/UIManager';
 import { InputManager } from '../managers/InputManager';
 
@@ -46,7 +46,7 @@ export class GameScene extends Phaser.Scene {
         this.gridManager = new GridManager(this, this.wordManager, size * 0.96);
 
         this.uiManager = new UIManager(this, this.gameStateManager);
-        this.settingsManager = new SettingsManager(this, (settings) => {});
+        this.settingsManager = new SettingsManager(this, () => {});
 
         this.inputManager = new InputManager(this, this.gridManager, this.settingsManager, this.uiManager, this.checkWord.bind(this));
         this.inputManager.registerInputEvents();
@@ -71,7 +71,7 @@ export class GameScene extends Phaser.Scene {
                 goal: parseInt(goal, 10),
                 time_limit_sec: parseInt(time_limit_sec, 10)
             };
-        }).filter(row => !isNaN(row.level));
+        }).filter((row: { level: number; goal: number; time_limit_sec: number; }) => !isNaN(row.level));
     }
 
     private setupLevel(levelNumber: number) {

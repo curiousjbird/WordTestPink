@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GridManager, LetterTile } from './GridManager';
+import { GridManager, type LetterTile } from './GridManager';
 import { SettingsManager } from './SettingsManager';
 import { UIManager } from './UIManager';
 
